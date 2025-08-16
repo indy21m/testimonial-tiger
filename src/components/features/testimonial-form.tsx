@@ -71,38 +71,24 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
   const { styling, settings } = form.config
   const borderRadius = radiusMap[styling.borderRadius]
 
-  // Create dynamic schema based on form settings
-  const createSchema = () => {
-    const schemaShape: Record<string, z.ZodTypeAny> = {
-      content: z.string().min(10, 'Please write at least 10 characters'),
-    }
+  // Base schema that always exists
+  const baseSchema = z.object({
+    content: z.string().min(10, 'Please write at least 10 characters'),
+    customerName: settings.requireName 
+      ? z.string().min(2, 'Name is required')
+      : z.string().optional(),
+    customerEmail: settings.requireEmail
+      ? z.string().email('Valid email is required')
+      : z.string().optional(),
+  })
 
-    if (settings.requireName) {
-      schemaShape.customerName = z.string().min(2, 'Name is required')
-    }
-
-    if (settings.requireEmail) {
-      schemaShape.customerEmail = z.string().email('Valid email is required')
-    }
-
-    // Add custom questions
-    form.config.questions.forEach((question) => {
-      if (question.required) {
-        if (question.type === 'rating') {
-          schemaShape[question.id] = z.number().min(1).max(5)
-        } else {
-          schemaShape[question.id] = z.string().min(1, `${question.label} is required`)
-        }
-      } else {
-        schemaShape[question.id] = z.string().optional()
-      }
-    })
-
-    return z.object(schemaShape)
+  // Use a simple type that matches what we actually use
+  type FormData = {
+    content: string
+    customerName?: string
+    customerEmail?: string
+    [key: string]: unknown
   }
-
-  const formSchema = createSchema()
-  type FormData = z.infer<typeof formSchema>
 
   const {
     register,
@@ -111,7 +97,12 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
     setValue,
     watch
   } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(baseSchema.passthrough()) as any,
+    defaultValues: {
+      content: '',
+      customerName: '',
+      customerEmail: '',
+    }
   })
 
   const submitTestimonial = api.testimonial.submit.useMutation({
@@ -130,8 +121,9 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
     const customAnswers: Record<string, unknown> = {}
     
     form.config.questions.forEach((question) => {
-      if (data[question.id as keyof FormData]) {
-        customAnswers[question.id] = data[question.id as keyof FormData]
+      const value = data[question.id]
+      if (value !== undefined && value !== '') {
+        customAnswers[question.id] = value
       }
     })
 
@@ -139,8 +131,8 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
       formId: form.id,
       content: data.content,
       rating,
-      customerName: 'customerName' in data ? (data as { customerName?: string }).customerName : undefined,
-      customerEmail: 'customerEmail' in data ? (data as { customerEmail?: string }).customerEmail : undefined,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
       customerPhoto: mediaType === 'image' ? mediaUrl : undefined,
       videoUrl: mediaType === 'video' ? mediaUrl : undefined,
       customAnswers,
@@ -192,7 +184,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                 Your Name <span className="text-red-500">*</span>
               </Label>
               <Input
-                {...register('customerName' as any)}
+                {...register('customerName')}
                 placeholder="John Doe"
                 style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
                 className={errors.customerName ? 'border-red-500' : ''}
@@ -211,7 +203,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
               </Label>
               <Input
                 type="email"
-                {...register('customerEmail' as any)}
+                {...register('customerEmail')}
                 placeholder="john@example.com"
                 style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
                 className={errors.customerEmail ? 'border-red-500' : ''}
@@ -270,7 +262,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
               
               {question.type === 'text' && (
                 <Input
-                  {...register(question.id as any)}
+                  {...register(question.id)}
                   placeholder={question.placeholder || ''}
                   style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
                 />
@@ -278,7 +270,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
               
               {question.type === 'textarea' && (
                 <Textarea
-                  {...register(question.id as any)}
+                  {...register(question.id)}
                   placeholder={question.placeholder || ''}
                   rows={3}
                   style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
@@ -291,13 +283,13 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                     <button
                       key={star}
                       type="button"
-                      onClick={() => setValue(question.id as any, star)}
+                      onClick={() => setValue(question.id, star)}
                       className="text-2xl transition-all hover:scale-110"
                       style={{ 
-                        color: star <= (watch(question.id as any) || 0) ? styling.primaryColor : '#D1D5DB'
+                        color: star <= (watch(question.id) as number || 0) ? styling.primaryColor : '#D1D5DB'
                       }}
                     >
-                      <Star className={`w-6 h-6 ${star <= (watch(question.id as any) || 0) ? 'fill-current' : ''}`} />
+                      <Star className={`w-6 h-6 ${star <= (watch(question.id) as number || 0) ? 'fill-current' : ''}`} />
                     </button>
                   ))}
                 </div>
@@ -305,7 +297,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
               
               {question.type === 'select' && (
                 <select
-                  {...register(question.id as any)}
+                  {...register(question.id)}
                   className="w-full p-2 border rounded-md"
                   style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
                 >
@@ -318,9 +310,9 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                 </select>
               )}
 
-              {errors[question.id as keyof FormData] && (
+              {errors[question.id] && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors[question.id as keyof FormData]?.message}
+                  {(errors[question.id] as any)?.message}
                 </p>
               )}
             </div>

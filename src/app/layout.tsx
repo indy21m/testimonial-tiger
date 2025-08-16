@@ -4,6 +4,9 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { TRPCReactProvider } from '@/lib/trpc/client'
 import './globals.css'
 
+// Force dynamic rendering to prevent build-time Clerk errors
+export const dynamic = 'force-dynamic'
+
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
