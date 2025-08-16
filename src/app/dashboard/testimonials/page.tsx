@@ -77,7 +77,7 @@ export default function TestimonialsPage() {
         t.rating?.toString() || '',
         t.content,
         t.status,
-        new Date(t.submittedAt).toLocaleDateString(),
+        t.submittedAt ? new Date(t.submittedAt).toLocaleDateString() : '',
       ])
     ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
 
