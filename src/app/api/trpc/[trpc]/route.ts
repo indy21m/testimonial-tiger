@@ -3,6 +3,9 @@ import { type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
 import { createTRPCContext } from '@/server/api/trpc'
 
+// Force dynamic rendering for API routes
+export const dynamic = 'force-dynamic'
+
 const createContext = async (req: NextRequest) => {
   return createTRPCContext({
     headers: req.headers,

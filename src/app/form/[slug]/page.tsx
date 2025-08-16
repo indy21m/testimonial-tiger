@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation'
 import { api } from '@/lib/trpc/server'
 import { TestimonialForm } from '@/components/features/testimonial-form'
 
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic'
+
 interface FormPageProps {
   params: Promise<{ slug: string }>
 }
