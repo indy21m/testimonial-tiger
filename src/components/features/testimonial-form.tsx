@@ -117,9 +117,10 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
   const submitTestimonial = api.testimonial.submit.useMutation({
     onSuccess: () => {
       setIsSubmitted(true)
-      if (settings.redirectUrl) {
+      const redirectUrl = settings.redirectUrl
+      if (redirectUrl) {
         setTimeout(() => {
-          window.location.href = settings.redirectUrl
+          window.location.href = redirectUrl
         }, 2000)
       }
     },
