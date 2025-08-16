@@ -223,11 +223,13 @@ export function MyForm() {
 ```typescript
 // server/api/routers/user.ts
 export const userRouter = createTRPCRouter({
-  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input, ctx }) => {
-    return await ctx.db.query.users.findFirst({
-      where: eq(users.id, input.id),
-    })
-  }),
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input, ctx }) => {
+      return await ctx.db.query.users.findFirst({
+        where: eq(users.id, input.id),
+      })
+    }),
 })
 ```
 
@@ -248,7 +250,7 @@ export const userRouter = createTRPCRouter({
 
 ```typescript
 // env.mjs
-import { z } from "zod"
+import { z } from 'zod'
 
 const envSchema = z.object({
   DATABASE_URL: z.string(),
@@ -412,14 +414,14 @@ When preparing to commit:
 // ❌ AI often generates
 export const getServerSideProps = async () => {} // Pages Router
 const handleSubmit = (data: any) => {} // Untyped
-import fs from "fs" // In Client Component
-;("Run npm dev to test locally") // Wrong - user doesn't test
-;("Manually create migration SQL") // Wrong - use drizzle-kit
+import fs from 'fs' // In Client Component
+;('Run npm dev to test locally') // Wrong - user doesn't test
+;('Manually create migration SQL') // Wrong - use drizzle-kit
 
 // ✅ Correct patterns
 export default async function Page() {} // App Router
 const handleSubmit = (data: FormData) => {} // Typed
-;("use server") // For server-only code
+;('use server') // For server-only code
 ;("I'll test this with pnpm dev, then you can commit") // Correct
 ;("I'll generate migration with pnpm drizzle-kit generate:pg") // Correct
 ```
@@ -475,7 +477,7 @@ try {
     // Handle known errors
   } else {
     // Log unknown errors
-    console.error("Unexpected error:", error)
+    console.error('Unexpected error:', error)
   }
 }
 ```

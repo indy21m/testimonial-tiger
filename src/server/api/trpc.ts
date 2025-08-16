@@ -10,7 +10,7 @@ interface CreateContextOptions {
 
 export const createTRPCContext = async (opts: CreateContextOptions) => {
   const { userId } = await auth()
-  
+
   return {
     db,
     userId,
@@ -38,7 +38,7 @@ const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
   if (!ctx.userId) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
-  
+
   return next({
     ctx: {
       userId: ctx.userId,

@@ -1,6 +1,12 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 export default function HomePage() {
@@ -36,8 +42,9 @@ export default function HomePage() {
           </span>
         </h1>
         <p className="mb-8 text-xl text-gray-600 dark:text-gray-400">
-          Collect, manage, and display beautiful testimonials that convert visitors into customers.
-          A powerful alternative to expensive platforms, built with modern technology.
+          Collect, manage, and display beautiful testimonials that convert
+          visitors into customers. A powerful alternative to expensive
+          platforms, built with modern technology.
         </p>
         <div className="flex justify-center gap-4">
           <Link href="/sign-up">
@@ -135,9 +142,7 @@ export default function HomePage() {
           <Card>
             <CardHeader>
               <CardTitle>🤖 AI Features</CardTitle>
-              <CardDescription>
-                Smart features powered by AI
-              </CardDescription>
+              <CardDescription>Smart features powered by AI</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
@@ -194,7 +199,8 @@ export default function HomePage() {
       <footer className="border-t bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            © 2025 Testimonial Tiger. Built with ❤️ using Next.js 15 & TypeScript.
+            © 2025 Testimonial Tiger. Built with ❤️ using Next.js 15 &
+            TypeScript.
           </div>
         </div>
       </footer>

@@ -6,7 +6,7 @@ A beautiful, conversion-focused testimonial collection and display platform buil
 
 - **Beautiful Forms** - Fully customizable testimonial collection forms
 - **Smart Dashboard** - Analytics and management tools
-- **Display Widgets** - Multiple widget types (wall, carousel, grid) 
+- **Display Widgets** - Multiple widget types (wall, carousel, grid)
 - **Integrations** - Zapier webhooks and API access
 - **AI Features** - Smart summaries and suggestions (optional)
 - **Enterprise Ready** - Domain whitelisting, GDPR compliant
@@ -27,11 +27,13 @@ A beautiful, conversion-focused testimonial collection and display platform buil
 
 1. Clone the repository
 2. Install dependencies:
+
    ```bash
    pnpm install
    ```
 
 3. Set up environment variables:
+
    ```bash
    cp .env.example .env.local
    ```
@@ -42,9 +44,11 @@ A beautiful, conversion-focused testimonial collection and display platform buil
    - Set up other optional services as needed
 
 5. Run database migrations:
+
    ```bash
    pnpm drizzle-kit generate:pg
    ```
+
    Then execute the generated SQL in your Neon console.
 
 6. Start development server:
@@ -80,6 +84,7 @@ src/
 ## 📝 Database Schema
 
 The application uses the following main tables:
+
 - `users` - User accounts (from Clerk)
 - `forms` - Testimonial collection forms
 - `testimonials` - Submitted testimonials

@@ -35,95 +35,95 @@ const widgetConfigSchema = z.object({
 
 export const widgetRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(z.object({
-      name: z.string().min(1),
-      type: z.enum(['wall', 'carousel', 'grid', 'single', 'badge']),
-      config: widgetConfigSchema.optional(),
-      allowedDomains: z.array(z.string()).optional(),
-    }))
+    .input(
+      z.object({
+        name: z.string().min(1),
+        type: z.enum(['wall', 'carousel', 'grid', 'single', 'badge']),
+        config: widgetConfigSchema.optional(),
+        allowedDomains: z.array(z.string()).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
-      const widget = await ctx.db.insert(widgets).values({
-        userId: ctx.userId,
-        name: input.name,
-        type: input.type,
-        config: input.config,
-        allowedDomains: input.allowedDomains,
-      }).returning()
-      
+      const widget = await ctx.db
+        .insert(widgets)
+        .values({
+          userId: ctx.userId,
+          name: input.name,
+          type: input.type,
+          config: input.config,
+          allowedDomains: input.allowedDomains,
+        })
+        .returning()
+
       return widget[0]
     }),
-  
+
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const widget = await ctx.db.query.widgets.findFirst({
-        where: and(
-          eq(widgets.id, input.id),
-          eq(widgets.userId, ctx.userId)
-        ),
+        where: and(eq(widgets.id, input.id), eq(widgets.userId, ctx.userId)),
       })
-      
+
       if (!widget) {
         throw new TRPCError({ code: 'NOT_FOUND' })
       }
-      
+
       return widget
     }),
-  
+
   list: protectedProcedure.query(async ({ ctx }) => {
     const userWidgets = await ctx.db.query.widgets.findMany({
       where: eq(widgets.userId, ctx.userId),
       orderBy: (widgets, { desc }) => [desc(widgets.createdAt)],
     })
-    
+
     return userWidgets
   }),
-  
+
   update: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      name: z.string().optional(),
-      type: z.enum(['wall', 'carousel', 'grid', 'single', 'badge']).optional(),
-      config: widgetConfigSchema.optional(),
-      allowedDomains: z.array(z.string()).optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string().optional(),
+        type: z
+          .enum(['wall', 'carousel', 'grid', 'single', 'badge'])
+          .optional(),
+        config: widgetConfigSchema.optional(),
+        allowedDomains: z.array(z.string()).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updates } = input
-      
+
       const updated = await ctx.db
         .update(widgets)
         .set({
           ...updates,
           updatedAt: new Date(),
         })
-        .where(and(
-          eq(widgets.id, id),
-          eq(widgets.userId, ctx.userId)
-        ))
+        .where(and(eq(widgets.id, id), eq(widgets.userId, ctx.userId)))
         .returning()
-      
+
       if (!updated.length) {
         throw new TRPCError({ code: 'NOT_FOUND' })
       }
-      
+
       return updated[0]
     }),
-  
+
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const deleted = await ctx.db
         .delete(widgets)
-        .where(and(
-          eq(widgets.id, input.id),
-          eq(widgets.userId, ctx.userId)
-        ))
+        .where(and(eq(widgets.id, input.id), eq(widgets.userId, ctx.userId)))
         .returning()
-      
+
       if (!deleted.length) {
         throw new TRPCError({ code: 'NOT_FOUND' })
       }
-      
+
       return deleted[0]
     }),
 })

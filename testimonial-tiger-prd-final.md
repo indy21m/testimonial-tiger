@@ -62,7 +62,7 @@ export const forms = pgTable('forms', {
   userId: text('user_id').notNull().references(() => users.id),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique().$defaultFn(() => createId()),
-  
+
   // Content customization
   config: jsonb('config').$type<{
     title: string
@@ -114,12 +114,12 @@ export const forms = pgTable('forms', {
       borderRadius: '0.5rem'
     }
   })),
-  
+
   // Analytics
   views: integer('views').default(0),
   submissions: integer('submissions').default(0),
   conversionRate: integer('conversion_rate').default(0),
-  
+
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
@@ -131,29 +131,29 @@ export const forms = pgTable('forms', {
 export const testimonials = pgTable('testimonials', {
   id: uuid('id').defaultRandom().primaryKey(),
   formId: uuid('form_id').notNull().references(() => forms.id, { onDelete: 'cascade' }),
-  
+
   // Customer info
   customerName: text('customer_name').notNull(),
   customerEmail: text('customer_email'),
   customerCompany: text('customer_company'),
   customerPhoto: text('customer_photo'),
-  
+
   // Content
   content: text('content').notNull(),
   rating: integer('rating'),
   videoUrl: text('video_url'),
   videoThumbnail: text('video_thumbnail'),
-  
+
   // Custom fields from form questions
   customFields: jsonb('custom_fields').$type<Record<string, any>>().default({}),
-  
+
   // AI-generated summary (optional)
   aiSummary: text('ai_summary'),
-  
+
   // Status
   status: statusEnum('status').default('pending'),
   featured: boolean('featured').default(false),
-  
+
   // Metadata
   source: text('source').default('form'), // form, api, import
   metadata: jsonb('metadata').$type<{
@@ -161,7 +161,7 @@ export const testimonials = pgTable('testimonials', {
     userAgent?: string
     referrer?: string
   }>().default({}),
-  
+
   submittedAt: timestamp('submitted_at').defaultNow(),
   approvedAt: timestamp('approved_at'),
 }, (table) => ({
@@ -177,7 +177,7 @@ export const widgets = pgTable('widgets', {
   userId: text('user_id').notNull().references(() => users.id),
   name: text('name').notNull(),
   type: widgetTypeEnum('type').notNull(),
-  
+
   // Configuration
   config: jsonb('config').$type<{
     display: {
@@ -229,14 +229,14 @@ export const widgets = pgTable('widgets', {
       fontFamily: 'Inter'
     }
   })),
-  
+
   // Security
   allowedDomains: text('allowed_domains').array().default([]),
-  
+
   // Analytics
   impressions: integer('impressions').default(0),
   interactions: integer('interactions').default(0),
-  
+
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
@@ -249,7 +249,7 @@ export const integrations = pgTable('integrations', {
   userId: text('user_id').notNull().references(() => users.id),
   type: text('type').notNull(), // zapier, webhook
   name: text('name').notNull(),
-  
+
   // Configuration
   config: jsonb('config').$type<{
     webhookUrl?: string
@@ -257,7 +257,7 @@ export const integrations = pgTable('integrations', {
     triggers: string[] // new_testimonial, approved, featured
     headers?: Record<string, string>
   }>().notNull(),
-  
+
   isActive: boolean('is_active').default(true),
   lastTriggered: timestamp('last_triggered'),
   createdAt: timestamp('created_at').defaultNow(),
@@ -278,13 +278,13 @@ export const webhookLogs = pgTable('webhook_logs', {
 /*
 ALTER TABLE "testimonials" ADD COLUMN "fts_document" tsvector
   GENERATED ALWAYS AS (
-    to_tsvector('english', 
-      coalesce("customerName", '') || ' ' || 
-      coalesce("customerCompany", '') || ' ' || 
+    to_tsvector('english',
+      coalesce("customerName", '') || ' ' ||
+      coalesce("customerCompany", '') || ' ' ||
       coalesce("content", '')
     )
   ) STORED;
-  
+
 CREATE INDEX "fts_document_idx" ON "testimonials" USING GIN ("fts_document");
 */
 ```
@@ -305,7 +305,7 @@ export default function FormEditor({ params }: { params: { id: string } }) {
   const { data: form } = api.form.get.useQuery({ id: params.id });
   const [activeTab, setActiveTab] = useState<'content' | 'style' | 'settings'>('content');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Left Panel - Editor */}
@@ -323,29 +323,29 @@ export default function FormEditor({ params }: { params: { id: string } }) {
               </span>
             </motion.div>
           )}
-          
+
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="content">Content</TabsTrigger>
               <TabsTrigger value="style">Style</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="content" className="space-y-6 mt-6">
               <FormContentEditor form={form} />
             </TabsContent>
-            
+
             <TabsContent value="style" className="space-y-6 mt-6">
               <FormStyleEditor form={form} />
             </TabsContent>
-            
+
             <TabsContent value="settings" className="space-y-6 mt-6">
               <FormSettingsEditor form={form} />
             </TabsContent>
           </Tabs>
         </div>
       </div>
-      
+
       {/* Right Panel - Live Preview */}
       <div className="w-1/2 bg-white dark:bg-gray-800 overflow-y-auto">
         <div className="sticky top-0 bg-gray-100 dark:bg-gray-900 p-4 border-b">
@@ -354,7 +354,7 @@ export default function FormEditor({ params }: { params: { id: string } }) {
             <DevicePreviewToggle />
           </div>
         </div>
-        
+
         <div className="p-8">
           <FormPreview form={form} />
         </div>
@@ -368,7 +368,7 @@ function FormContentEditor({ form }: { form: Form }) {
   const { mutate: updateForm } = api.form.update.useMutation();
   const [questions, setQuestions] = useState(form.config.questions);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Debounced update function - saves after 1 second of no changes
   const debouncedUpdate = useMemo(
     () => debounce((updates: any) => {
@@ -390,26 +390,26 @@ function FormContentEditor({ form }: { form: Form }) {
     }, 1000),
     [form.id, updateForm]
   );
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       debouncedUpdate.cancel();
     };
   }, [debouncedUpdate]);
-  
+
   const handleTitleChange = (title: string) => {
-    debouncedUpdate({ 
+    debouncedUpdate({
       config: { ...form.config, title }
     });
   };
-  
+
   const handleDescriptionChange = (description: string) => {
-    debouncedUpdate({ 
+    debouncedUpdate({
       config: { ...form.config, description }
     });
   };
-  
+
   const addQuestion = (type: string) => {
     const newQuestion = {
       id: createId(),
@@ -423,7 +423,7 @@ function FormContentEditor({ form }: { form: Form }) {
       config: { ...form.config, questions: updatedQuestions }
     });
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Basic Info */}
@@ -440,7 +440,7 @@ function FormContentEditor({ form }: { form: Form }) {
               placeholder="We'd love your feedback!"
             />
           </div>
-          
+
           <div>
             <Label>Description</Label>
             <Textarea
@@ -451,7 +451,7 @@ function FormContentEditor({ form }: { form: Form }) {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Custom Questions */}
       <Card>
         <CardHeader>
@@ -469,7 +469,7 @@ function FormContentEditor({ form }: { form: Form }) {
                     key={question.id}
                     question={question}
                     onUpdate={(updated) => {
-                      const updatedQuestions = questions.map(q => 
+                      const updatedQuestions = questions.map(q =>
                         q.id === question.id ? updated : q
                       );
                       setQuestions(updatedQuestions);
@@ -489,7 +489,7 @@ function FormContentEditor({ form }: { form: Form }) {
               </div>
             </SortableContext>
           </DndContext>
-          
+
           <div className="flex gap-2 mt-4">
             <Button size="sm" variant="outline" onClick={() => addQuestion('text')}>
               <Plus className="w-4 h-4 mr-1" /> Text
@@ -501,7 +501,7 @@ function FormContentEditor({ form }: { form: Form }) {
               <Plus className="w-4 h-4 mr-1" /> Dropdown
             </Button>
           </div>
-          
+
           {isSaving && (
             <p className="text-sm text-gray-500 mt-2">Saving...</p>
           )}
@@ -518,14 +518,14 @@ function FormContentEditor({ form }: { form: Form }) {
 // src/app/dashboard/page.tsx
 export default async function DashboardPage() {
   const { userId } = auth();
-  
+
   // Parallel data fetching for better performance
   const [testimonials, forms, stats] = await Promise.all([
     getRecentTestimonials(userId, 10),
     getUserForms(userId),
     getDashboardStats(userId),
   ]);
-  
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -536,7 +536,7 @@ export default async function DashboardPage() {
             Welcome back! Here's your testimonial overview.
           </p>
         </div>
-        
+
         <div className="flex gap-3">
           <Button asChild>
             <Link href="/dashboard/forms/new">
@@ -546,7 +546,7 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </div>
-      
+
       {/* Stats Cards with animated counters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatsCard
@@ -556,7 +556,7 @@ export default async function DashboardPage() {
           icon={<MessageSquare />}
           animated
         />
-        
+
         <StatsCard
           title="Pending Review"
           value={stats.pending}
@@ -568,14 +568,14 @@ export default async function DashboardPage() {
             </Link>
           }
         />
-        
+
         <StatsCard
           title="Average Rating"
           value={`${stats.avgRating.toFixed(1)} ★`}
           subtitle={`from ${stats.ratedCount} reviews`}
           icon={<Star />}
         />
-        
+
         <StatsCard
           title="Conversion Rate"
           value={`${stats.conversionRate}%`}
@@ -584,7 +584,7 @@ export default async function DashboardPage() {
           animated
         />
       </div>
-      
+
       {/* Recent Activity & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Testimonials */}
@@ -606,13 +606,13 @@ export default async function DashboardPage() {
                 />
               ))}
             </div>
-            
+
             <Button variant="outline" className="w-full mt-4" asChild>
               <Link href="/dashboard/testimonials">View All Testimonials</Link>
             </Button>
           </CardContent>
         </Card>
-        
+
         {/* Quick Stats & Actions */}
         <div className="space-y-6">
           {/* Form Performance */}
@@ -631,7 +631,7 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                     <Badge variant="secondary">
-                      {form.views > 0 
+                      {form.views > 0
                         ? `${((form.submissions / form.views) * 100).toFixed(1)}%`
                         : '0%'
                       }
@@ -641,7 +641,7 @@ export default async function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Quick Actions */}
           <Card>
             <CardHeader>
@@ -654,14 +654,14 @@ export default async function DashboardPage() {
                   Manage Widgets
                 </Link>
               </Button>
-              
+
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href="/dashboard/integrations">
                   <Zap className="w-4 h-4 mr-2" />
                   Configure Integrations
                 </Link>
               </Button>
-              
+
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href="/dashboard/import">
                   <Upload className="w-4 h-4 mr-2" />
@@ -672,7 +672,7 @@ export default async function DashboardPage() {
           </Card>
         </div>
       </div>
-      
+
       {/* Chart */}
       <Card>
         <CardHeader>
@@ -695,11 +695,11 @@ export default function TestimonialsPage() {
     rating: 'all',
     search: '',
   });
-  
+
   // Use full-text search when available
   const { data: testimonials } = api.testimonial.list.useQuery(filters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  
+
   const handleBulkAction = async (action: string) => {
     if (action === 'approve') {
       await api.testimonial.bulkApprove.mutate({ ids: selectedIds });
@@ -708,7 +708,7 @@ export default function TestimonialsPage() {
     }
     setSelectedIds([]);
   };
-  
+
   return (
     <div className="p-6">
       {/* Filters */}
@@ -724,7 +724,7 @@ export default function TestimonialsPage() {
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
-        
+
         <Select value={filters.form} onValueChange={(form) => setFilters({ ...filters, form })}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="All Forms" />
@@ -734,14 +734,14 @@ export default function TestimonialsPage() {
             {/* Dynamic form list */}
           </SelectContent>
         </Select>
-        
+
         <Input
           placeholder="Search testimonials..."
           value={filters.search}
           onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           className="max-w-xs"
         />
-        
+
         {selectedIds.length > 0 && (
           <div className="flex gap-2 ml-auto">
             <Button onClick={() => handleBulkAction('approve')}>
@@ -753,7 +753,7 @@ export default function TestimonialsPage() {
           </div>
         )}
       </div>
-      
+
       {/* Testimonials Table */}
       <Card>
         <Table>
@@ -782,8 +782,8 @@ export default function TestimonialsPage() {
           </TableHeader>
           <TableBody>
             {testimonials?.map((testimonial) => (
-              <TestimonialRow 
-                key={testimonial.id} 
+              <TestimonialRow
+                key={testimonial.id}
                 testimonial={testimonial}
                 selected={selectedIds.includes(testimonial.id)}
                 onSelect={(checked) => {
@@ -811,7 +811,7 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
   const { data: widget } = api.widget.get.useQuery({ id: params.id });
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const { mutate: updateWidget } = api.widget.update.useMutation();
-  
+
   // Debounced update for smooth editing experience
   const debouncedUpdate = useMemo(
     () => debounce((updates: any) => {
@@ -819,14 +819,14 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
     }, 500),
     [params.id]
   );
-  
+
   return (
     <div className="flex h-screen">
       {/* Settings Panel */}
       <div className="w-96 border-r overflow-y-auto p-6 space-y-6">
         <div>
           <h2 className="text-lg font-semibold mb-4">Widget Settings</h2>
-          
+
           {/* Display Settings */}
           <Card className="mb-6">
             <CardHeader>
@@ -837,56 +837,56 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                 <Label>Show Rating</Label>
                 <Switch
                   checked={widget.config.display.showRating}
-                  onCheckedChange={(checked) => 
-                    debouncedUpdate({ 
-                      config: { 
-                        ...widget.config, 
+                  onCheckedChange={(checked) =>
+                    debouncedUpdate({
+                      config: {
+                        ...widget.config,
                         display: { ...widget.config.display, showRating: checked }
                       }
                     })
                   }
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label>Show Customer Photo</Label>
                 <Switch
                   checked={widget.config.display.showPhoto}
-                  onCheckedChange={(checked) => 
-                    debouncedUpdate({ 
-                      config: { 
-                        ...widget.config, 
+                  onCheckedChange={(checked) =>
+                    debouncedUpdate({
+                      config: {
+                        ...widget.config,
                         display: { ...widget.config.display, showPhoto: checked }
                       }
                     })
                   }
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label>Show Company</Label>
                 <Switch
                   checked={widget.config.display.showCompany}
-                  onCheckedChange={(checked) => 
-                    debouncedUpdate({ 
-                      config: { 
-                        ...widget.config, 
+                  onCheckedChange={(checked) =>
+                    debouncedUpdate({
+                      config: {
+                        ...widget.config,
                         display: { ...widget.config.display, showCompany: checked }
                       }
                     })
                   }
                 />
               </div>
-              
+
               <div>
                 <Label>Max Text Length</Label>
                 <Input
                   type="number"
                   value={widget.config.display.maxLength}
-                  onChange={(e) => 
-                    debouncedUpdate({ 
-                      config: { 
-                        ...widget.config, 
+                  onChange={(e) =>
+                    debouncedUpdate({
+                      config: {
+                        ...widget.config,
                         display: { ...widget.config.display, maxLength: parseInt(e.target.value) }
                       }
                     })
@@ -895,7 +895,7 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Style Settings */}
           <Card className="mb-6">
             <CardHeader>
@@ -906,10 +906,10 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                 <Label>Theme</Label>
                 <RadioGroup
                   value={widget.config.styling.theme}
-                  onValueChange={(theme) => 
-                    debouncedUpdate({ 
-                      config: { 
-                        ...widget.config, 
+                  onValueChange={(theme) =>
+                    debouncedUpdate({
+                      config: {
+                        ...widget.config,
                         styling: { ...widget.config.styling, theme }
                       }
                     })
@@ -929,7 +929,7 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                   </div>
                 </RadioGroup>
               </div>
-              
+
               {widget.config.styling.theme === 'custom' && (
                 <>
                   <div>
@@ -938,10 +938,10 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                       <Input
                         type="color"
                         value={widget.config.styling.primaryColor}
-                        onChange={(e) => 
-                          debouncedUpdate({ 
-                            config: { 
-                              ...widget.config, 
+                        onChange={(e) =>
+                          debouncedUpdate({
+                            config: {
+                              ...widget.config,
                               styling: { ...widget.config.styling, primaryColor: e.target.value }
                             }
                           })
@@ -950,10 +950,10 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                       />
                       <Input
                         value={widget.config.styling.primaryColor}
-                        onChange={(e) => 
-                          debouncedUpdate({ 
-                            config: { 
-                              ...widget.config, 
+                        onChange={(e) =>
+                          debouncedUpdate({
+                            config: {
+                              ...widget.config,
                               styling: { ...widget.config.styling, primaryColor: e.target.value }
                             }
                           })
@@ -961,17 +961,17 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label>Background Color</Label>
                     <div className="flex gap-2">
                       <Input
                         type="color"
                         value={widget.config.styling.backgroundColor}
-                        onChange={(e) => 
-                          debouncedUpdate({ 
-                            config: { 
-                              ...widget.config, 
+                        onChange={(e) =>
+                          debouncedUpdate({
+                            config: {
+                              ...widget.config,
                               styling: { ...widget.config.styling, backgroundColor: e.target.value }
                             }
                           })
@@ -980,10 +980,10 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                       />
                       <Input
                         value={widget.config.styling.backgroundColor}
-                        onChange={(e) => 
-                          debouncedUpdate({ 
-                            config: { 
-                              ...widget.config, 
+                        onChange={(e) =>
+                          debouncedUpdate({
+                            config: {
+                              ...widget.config,
                               styling: { ...widget.config.styling, backgroundColor: e.target.value }
                             }
                           })
@@ -993,15 +993,15 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                   </div>
                 </>
               )}
-              
+
               <div>
                 <Label>Layout Density</Label>
                 <Select
                   value={widget.config.styling.layout}
-                  onValueChange={(layout) => 
-                    debouncedUpdate({ 
-                      config: { 
-                        ...widget.config, 
+                  onValueChange={(layout) =>
+                    debouncedUpdate({
+                      config: {
+                        ...widget.config,
                         styling: { ...widget.config.styling, layout }
                       }
                     })
@@ -1017,15 +1017,15 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label>Shadow</Label>
                 <Select
                   value={widget.config.styling.shadow}
-                  onValueChange={(shadow) => 
-                    debouncedUpdate({ 
-                      config: { 
-                        ...widget.config, 
+                  onValueChange={(shadow) =>
+                    debouncedUpdate({
+                      config: {
+                        ...widget.config,
                         styling: { ...widget.config.styling, shadow }
                       }
                     })
@@ -1044,7 +1044,7 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Domain Whitelist */}
           <Card>
             <CardHeader>
@@ -1056,16 +1056,16 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
             <CardContent>
               <DomainWhitelist
                 domains={widget.allowedDomains}
-                onChange={(domains) => updateWidget({ 
-                  id: params.id, 
-                  allowedDomains: domains 
+                onChange={(domains) => updateWidget({
+                  id: params.id,
+                  allowedDomains: domains
                 })}
               />
             </CardContent>
           </Card>
         </div>
       </div>
-      
+
       {/* Preview Panel */}
       <div className="flex-1 bg-gray-50 dark:bg-gray-900">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b p-4">
@@ -1086,13 +1086,13 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                 <Smartphone className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <div className="flex gap-2">
               <Button variant="outline" size="sm">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
-              
+
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm">
@@ -1107,13 +1107,13 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
                       Copy and paste this code into your website
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
                     <code className="text-sm">
                       {`<script src="${process.env.NEXT_PUBLIC_APP_URL}/widget.js" data-widget-id="${widget.id}"></script>`}
                     </code>
                   </div>
-                  
+
                   <Button onClick={() => {
                     navigator.clipboard.writeText(embedCode);
                     toast.success('Code copied to clipboard');
@@ -1125,7 +1125,7 @@ export default function WidgetEditor({ params }: { params: { id: string } }) {
             </div>
           </div>
         </div>
-        
+
         <div className="p-8">
           <div className={cn(
             "mx-auto transition-all",
@@ -1152,22 +1152,31 @@ export class WebhookService {
         eq(integrations.isActive, true),
         sql`${integrations.config}->>'triggers' @> ${JSON.stringify([event])}`
       ),
-    });
-    
+    })
+
     // Process all webhooks in parallel for better performance
     const results = await Promise.allSettled(
-      integrations.map(integration => this.sendWebhook(integration, event, data))
-    );
-    
+      integrations.map((integration) =>
+        this.sendWebhook(integration, event, data)
+      )
+    )
+
     // Log failures for debugging without blocking
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(`Webhook failed for integration ${integrations[index].id}:`, result.reason);
+        console.error(
+          `Webhook failed for integration ${integrations[index].id}:`,
+          result.reason
+        )
       }
-    });
+    })
   }
-  
-  private async sendWebhook(integration: Integration, event: string, data: any) {
+
+  private async sendWebhook(
+    integration: Integration,
+    event: string,
+    data: any
+  ) {
     try {
       const response = await fetch(integration.config.webhookUrl, {
         method: 'POST',
@@ -1182,8 +1191,8 @@ export class WebhookService {
         }),
         // Add timeout to prevent hanging
         signal: AbortSignal.timeout(10000), // 10 second timeout
-      });
-      
+      })
+
       // Log the result
       await db.insert(webhookLogs).values({
         integrationId: integration.id,
@@ -1191,13 +1200,13 @@ export class WebhookService {
         status: response.ok ? 'success' : 'failed',
         statusCode: response.status,
         response: await response.text(),
-      });
-      
+      })
+
       // Update last triggered
-      await db.update(integrations)
+      await db
+        .update(integrations)
         .set({ lastTriggered: new Date() })
-        .where(eq(integrations.id, integration.id));
-        
+        .where(eq(integrations.id, integration.id))
     } catch (error) {
       // Log failure
       await db.insert(webhookLogs).values({
@@ -1205,44 +1214,48 @@ export class WebhookService {
         event,
         status: 'failed',
         response: error instanceof Error ? error.message : 'Unknown error',
-      });
+      })
     }
   }
 }
 
 // Testimonial submission with background processing
 async function handleTestimonialSubmission(data: TestimonialData) {
-  const testimonial = await db.insert(testimonials).values(data).returning();
-  const newTestimonial = testimonial[0];
-  
+  const testimonial = await db.insert(testimonials).values(data).returning()
+  const newTestimonial = testimonial[0]
+
   // Process AI and webhooks in background - don't await
-  processTestimonialAsync(newTestimonial, data.userId);
-  
+  processTestimonialAsync(newTestimonial, data.userId)
+
   // Return immediately for instant user feedback
-  return newTestimonial;
+  return newTestimonial
 }
 
-async function processTestimonialAsync(testimonial: Testimonial, userId: string) {
+async function processTestimonialAsync(
+  testimonial: Testimonial,
+  userId: string
+) {
   // Run AI summary and webhooks in parallel
   await Promise.allSettled([
     // AI Summary (if content is long enough)
     (async () => {
       if (testimonial.content.length > 500) {
         try {
-          const summary = await aiService.generateSummary(testimonial.content);
-          await db.update(testimonials)
+          const summary = await aiService.generateSummary(testimonial.content)
+          await db
+            .update(testimonials)
             .set({ aiSummary: summary })
-            .where(eq(testimonials.id, testimonial.id));
+            .where(eq(testimonials.id, testimonial.id))
         } catch (error) {
-          console.error('AI summary failed:', error);
+          console.error('AI summary failed:', error)
           // Fail silently - not critical
         }
       }
     })(),
-    
+
     // Trigger webhooks
-    webhookService.triggerWebhooks('new_testimonial', testimonial, userId)
-  ]);
+    webhookService.triggerWebhooks('new_testimonial', testimonial, userId),
+  ])
 }
 ```
 
@@ -1250,49 +1263,52 @@ async function processTestimonialAsync(testimonial: Testimonial, userId: string)
 
 ```typescript
 // src/app/api/widget/[id]/route.ts
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   const widget = await db.query.widgets.findFirst({
     where: eq(widgets.id, params.id),
-  });
-  
+  })
+
   if (!widget) {
-    return new Response('Widget not found', { status: 404 });
+    return new Response('Widget not found', { status: 404 })
   }
-  
+
   // Check domain whitelist
-  const referer = request.headers.get('referer');
+  const referer = request.headers.get('referer')
   if (widget.allowedDomains?.length > 0 && referer) {
-    const domain = new URL(referer).hostname;
+    const domain = new URL(referer).hostname
     if (!widget.allowedDomains.includes(domain)) {
-      return new Response('Domain not allowed', { status: 403 });
+      return new Response('Domain not allowed', { status: 403 })
     }
   }
-  
+
   // Get testimonials with filters applied
-  const testimonials = await getWidgetTestimonials(widget);
-  
+  const testimonials = await getWidgetTestimonials(widget)
+
   // Track impression (non-blocking)
   db.update(widgets)
     .set({ impressions: sql`${widgets.impressions} + 1` })
     .where(eq(widgets.id, widget.id))
     .then(() => {})
-    .catch(console.error);
-  
+    .catch(console.error)
+
   // Render based on type
-  const html = renderWidget(widget, testimonials);
-  
+  const html = renderWidget(widget, testimonials)
+
   return new Response(html, {
     headers: {
       'Content-Type': 'text/html',
       'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       'Access-Control-Allow-Origin': '*',
     },
-  });
+  })
 }
 
 function renderWidget(widget: Widget, testimonials: Testimonial[]) {
-  const { styling, display } = widget.config;
-  
+  const { styling, display } = widget.config
+
   // Generate CSS based on configuration
   const css = `
     <style>
@@ -1303,15 +1319,20 @@ function renderWidget(widget: Widget, testimonials: Testimonial[]) {
         --border: ${styling.borderColor};
         --radius: ${styling.borderRadius};
         --shadow: ${
-          styling.shadow === 'none' ? 'none' :
-          styling.shadow === 'sm' ? '0 1px 3px rgba(0,0,0,0.1)' :
-          styling.shadow === 'md' ? '0 4px 6px rgba(0,0,0,0.1)' :
-          '0 10px 15px rgba(0,0,0,0.1)'
+          styling.shadow === 'none'
+            ? 'none'
+            : styling.shadow === 'sm'
+              ? '0 1px 3px rgba(0,0,0,0.1)'
+              : styling.shadow === 'md'
+                ? '0 4px 6px rgba(0,0,0,0.1)'
+                : '0 10px 15px rgba(0,0,0,0.1)'
         };
         --spacing: ${
-          styling.layout === 'compact' ? '0.75rem' :
-          styling.layout === 'comfortable' ? '1rem' :
-          '1.5rem'
+          styling.layout === 'compact'
+            ? '0.75rem'
+            : styling.layout === 'comfortable'
+              ? '1rem'
+              : '1.5rem'
         };
         
         font-family: ${styling.fontFamily}, sans-serif;
@@ -1332,29 +1353,33 @@ function renderWidget(widget: Widget, testimonials: Testimonial[]) {
       
       ${styling.customCSS || ''}
     </style>
-  `;
-  
+  `
+
   // Render HTML based on widget type
-  let html = '';
-  
+  let html = ''
+
   switch (widget.type) {
     case 'wall':
       html = `
         <div class="tt-widget-${widget.id} tt-wall" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-          ${testimonials.map(t => renderTestimonialCard(t, display, widget.id)).join('')}
+          ${testimonials.map((t) => renderTestimonialCard(t, display, widget.id)).join('')}
         </div>
-      `;
-      break;
-      
+      `
+      break
+
     case 'carousel':
       html = `
         <div class="tt-widget-${widget.id} tt-carousel" data-autoplay="true" data-interval="5000">
           <div class="tt-carousel-inner">
-            ${testimonials.map((t, i) => `
+            ${testimonials
+              .map(
+                (t, i) => `
               <div class="tt-carousel-item ${i === 0 ? 'active' : ''}" style="display: ${i === 0 ? 'block' : 'none'};">
                 ${renderTestimonialCard(t, display, widget.id)}
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
           <button class="tt-carousel-prev">‹</button>
           <button class="tt-carousel-next">›</button>
@@ -1403,56 +1428,73 @@ function renderWidget(widget: Widget, testimonials: Testimonial[]) {
             }
           })();
         </script>
-      `;
-      break;
-      
+      `
+      break
+
     case 'grid':
       html = `
         <div class="tt-widget-${widget.id} tt-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-          ${testimonials.map(t => renderTestimonialCard(t, display, widget.id)).join('')}
+          ${testimonials.map((t) => renderTestimonialCard(t, display, widget.id)).join('')}
         </div>
-      `;
-      break;
+      `
+      break
   }
-  
-  return css + html;
+
+  return css + html
 }
 
-function renderTestimonialCard(testimonial: Testimonial, display: any, widgetId: string) {
+function renderTestimonialCard(
+  testimonial: Testimonial,
+  display: any,
+  widgetId: string
+) {
   return `
     <div class="tt-testimonial">
-      ${display.showRating && testimonial.rating ? `
+      ${
+        display.showRating && testimonial.rating
+          ? `
         <div class="tt-rating" style="color: var(--primary); margin-bottom: 0.5rem;">
           ${'★'.repeat(testimonial.rating)}${'☆'.repeat(5 - testimonial.rating)}
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       
       <p class="tt-content" style="color: var(--text); line-height: 1.6; margin-bottom: 1rem;">
-        ${display.maxLength && testimonial.content.length > display.maxLength
-          ? testimonial.content.substring(0, display.maxLength) + '...'
-          : testimonial.content
+        ${
+          display.maxLength && testimonial.content.length > display.maxLength
+            ? testimonial.content.substring(0, display.maxLength) + '...'
+            : testimonial.content
         }
       </p>
       
       <div class="tt-author" style="display: flex; align-items: center; gap: 0.75rem;">
-        ${display.showPhoto && testimonial.customerPhoto ? `
+        ${
+          display.showPhoto && testimonial.customerPhoto
+            ? `
           <img src="${testimonial.customerPhoto}" alt="${testimonial.customerName}" 
                style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
-        ` : ''}
+        `
+            : ''
+        }
         
         <div>
           <div style="font-weight: 600; color: var(--text);">
             ${testimonial.customerName}
           </div>
-          ${display.showCompany && testimonial.customerCompany ? `
+          ${
+            display.showCompany && testimonial.customerCompany
+              ? `
             <div style="font-size: 0.875rem; color: var(--text); opacity: 0.7;">
               ${testimonial.customerCompany}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       </div>
     </div>
-  `;
+  `
 }
 ```
 
@@ -1460,39 +1502,45 @@ function renderTestimonialCard(testimonial: Testimonial, display: any, widgetId:
 
 ```typescript
 // src/server/services/ai.ts
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export class AIService {
-  private genAI: GoogleGenerativeAI;
-  
+  private genAI: GoogleGenerativeAI
+
   constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
   }
-  
+
   // Generate a concise summary of a long testimonial
   async generateSummary(content: string): Promise<string> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
-    
-    const prompt = `Summarize this testimonial in one compelling sentence that captures the key benefit: "${content}"`;
-    
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' })
+
+    const prompt = `Summarize this testimonial in one compelling sentence that captures the key benefit: "${content}"`
+
+    const result = await model.generateContent(prompt)
+    return result.response.text()
   }
-  
+
   // Suggest form questions based on business type
-  async suggestQuestions(businessType: string, currentQuestions: string[]): Promise<string[]> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
-    
+  async suggestQuestions(
+    businessType: string,
+    currentQuestions: string[]
+  ): Promise<string[]> {
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' })
+
     const prompt = `
       Business type: ${businessType}
       Current questions: ${currentQuestions.join(', ')}
       
       Suggest 3 additional testimonial questions that would help showcase the value of this business.
       Return only the questions, one per line.
-    `;
-    
-    const result = await model.generateContent(prompt);
-    return result.response.text().split('\n').filter(q => q.trim());
+    `
+
+    const result = await model.generateContent(prompt)
+    return result.response
+      .text()
+      .split('\n')
+      .filter((q) => q.trim())
   }
 }
 ```
@@ -1502,6 +1550,7 @@ export class AIService {
 ## **Deployment Timeline**
 
 ### **Week 1-2: Foundation & Forms**
+
 - [ ] Project setup with Next.js 15, Clerk, Neon
 - [ ] Database schema and migrations
 - [ ] Form builder with debounced saving
@@ -1509,18 +1558,21 @@ export class AIService {
 - [ ] File uploads to Vercel Blob
 
 ### **Week 3-4: Dashboard & Management**
+
 - [ ] Dashboard with stats and charts
 - [ ] Testimonials management page with full-text search
 - [ ] Bulk actions and filtering
 - [ ] Form settings and styling
 
 ### **Week 5: Widgets & Display**
+
 - [ ] Widget types (wall, carousel, grid)
 - [ ] Widget customization editor with live preview
 - [ ] Embed code generation with scoped JavaScript
 - [ ] Domain whitelist security
 
 ### **Week 6: Integrations & Polish**
+
 - [ ] Zapier webhook integration with parallel processing
 - [ ] Custom webhook support
 - [ ] Import from CSV
@@ -1533,6 +1585,7 @@ export class AIService {
 ## **Critical Implementation Notes**
 
 ### **Performance Optimizations**
+
 ✅ **Debounced form/widget editing** - Prevents excessive API calls  
 ✅ **Parallel webhook processing** - Uses Promise.allSettled for concurrent execution  
 ✅ **Background AI processing** - Non-blocking testimonial submissions  
@@ -1541,6 +1594,7 @@ export class AIService {
 ✅ **Stale-while-revalidate caching** - For widget API responses
 
 ### **Security & Reliability**
+
 ✅ **Scoped widget JavaScript** - Prevents conflicts with multiple widgets  
 ✅ **Domain whitelist validation** - Controls where widgets can be embedded  
 ✅ **Webhook timeout handling** - 10-second timeout prevents hanging  
@@ -1549,6 +1603,7 @@ export class AIService {
 ✅ **Rate limiting** - On public endpoints
 
 ### **What This Includes**
+
 ✅ **Form customization** - Visual editor with debounced saving  
 ✅ **Robust dashboard** - Stats, charts, and activity feed  
 ✅ **Widget customization** - Multiple types with live preview  
@@ -1559,6 +1614,7 @@ export class AIService {
 ✅ **Optional AI** - Background processing for summaries
 
 ### **What We're NOT Building**
+
 ❌ Video recording in browser (just file upload)  
 ❌ Multi-language support  
 ❌ Team workspaces  
@@ -1584,16 +1640,19 @@ export class AIService {
 ## **Post-Launch Roadmap**
 
 **Month 2:**
+
 - Email notification system
 - Advanced analytics dashboard
 - Widget A/B testing
 
 **Month 3:**
+
 - Team workspaces
 - Video testimonial recording
 - Advanced AI features
 
 **Month 4:**
+
 - White-label options
 - API for developers
 - Mobile app

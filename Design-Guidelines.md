@@ -31,42 +31,49 @@ _A comprehensive design system for creating visually stunning, intelligent, and 
 ### The Seven Pillars of Exceptional Design (2025)
 
 **1. Meaningful Expression over Functional Minimalism**
+
 - Interfaces must be personal, emotionally resonant, and dynamic
 - Strategic use of color, shape, and motion creates memorable experiences
 - Every interaction should feel considered and delightful
 - Balance clarity with character—never boring, always intuitive
 
 **2. Intelligence as an Interface Layer**
+
 - AI is seamlessly integrated into the user experience
 - Interfaces anticipate user needs and provide contextual assistance
 - Real-time personalization based on user behavior
 - Smart defaults and predictive interactions reduce friction
 
 **3. System-First Design**
+
 - A comprehensive design system is the foundation of every project
 - Components built systematically from shared design tokens
 - Consistency achieved through programmable design patterns
 - Every element serves both aesthetic and functional purposes
 
 **4. Standalone Excellence**
+
 - Each application is a distinct, self-contained product
 - Independent architecture allows for focused, specialized experiences
 - Clean separation enables independent scaling and evolution
 - Every app should feel complete and polished on its own
 
 **5. Accessibility as a Cornerstone**
+
 - Beautiful design and inclusive design are inseparable
 - Every visual decision considers users with different abilities
 - Accessibility enhances usability for everyone
 - WCAG compliance is the baseline, not the goal
 
 **6. Progressive Disclosure**
+
 - Complex functionality revealed gradually based on user needs
 - Smart collapsing panels that remember user preferences
 - Context-aware UI that adapts to usage patterns
 - Advanced features accessible without overwhelming beginners
 
 **7. Real-time Responsiveness**
+
 - Instant feedback for every user action
 - Optimistic updates with graceful error recovery
 - Live previews and real-time collaboration
@@ -95,44 +102,44 @@ _A comprehensive design system for creating visually stunning, intelligent, and 
     // Framework
     "next": "15.x",
     "react": "19.x",
-    
+
     // Authentication
     "@clerk/nextjs": "latest",
-    
+
     // Database & ORM
     "@neondatabase/serverless": "latest",
     "drizzle-orm": "latest",
     "drizzle-zod": "latest",
-    
+
     // API Layer
     "@trpc/server": "latest",
     "@trpc/client": "latest",
     "@trpc/next": "latest",
     "@tanstack/react-query": "latest",
-    
+
     // Styling
     "tailwindcss": "latest",
     "tailwind-merge": "latest",
     "class-variance-authority": "latest",
     "@tailwindcss/typography": "latest",
-    
+
     // UI Components
     "@radix-ui/react-*": "latest", // All needed primitives
     "framer-motion": "latest", // Essential for fluid animations
     "@dnd-kit/sortable": "latest", // Drag and drop
     "react-flow": "latest", // Node-based UIs
-    
+
     // Forms & Validation
     "react-hook-form": "latest",
     "@hookform/resolvers": "latest",
     "zod": "latest",
-    
+
     // Data Visualization
     "recharts": "latest",
-    
+
     // Notifications & Feedback
     "sonner": "latest",
-    
+
     // Utilities
     "date-fns": "latest",
     "nanoid": "latest",
@@ -175,7 +182,7 @@ Each application follows a standalone architecture with:
 }
 
 .gradient-mesh {
-  background-image: 
+  background-image:
     radial-gradient(at 47% 33%, hsl(280, 80%, 65%) 0, transparent 59%),
     radial-gradient(at 82% 65%, hsl(218, 80%, 55%) 0, transparent 55%);
 }
@@ -190,7 +197,7 @@ Each application follows a standalone architecture with:
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 
+  box-shadow:
     0 8px 32px 0 rgba(31, 38, 135, 0.15),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
 }
@@ -198,7 +205,7 @@ Each application follows a standalone architecture with:
 /* Neumorphic Elements for Depth */
 .neumorphic {
   background: linear-gradient(145deg, #f0f0f3, #cacace);
-  box-shadow: 
+  box-shadow:
     20px 20px 60px #bebebe,
     -20px -20px 60px #ffffff;
 }
@@ -206,12 +213,7 @@ Each application follows a standalone architecture with:
 /* Dark Mode Optimized Gradients */
 @media (prefers-color-scheme: dark) {
   .gradient-dark {
-    background: linear-gradient(
-      135deg,
-      #667eea 0%,
-      #764ba2 50%,
-      #f093fb 100%
-    );
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     opacity: 0.8;
   }
 }
@@ -230,12 +232,7 @@ Each application follows a standalone architecture with:
 
 /* Gradient Text with Animation */
 .text-gradient {
-  background: linear-gradient(
-    135deg,
-    #667eea 0%,
-    #764ba2 50%,
-    #f093fb 100%
-  );
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -293,26 +290,26 @@ export const colors = {
     800: '#1e40af',
     900: '#1e3a8a',
   },
-  
+
   // Semantic Colors
   success: {
     light: '#86efac',
     DEFAULT: '#22c55e',
     dark: '#16a34a',
   },
-  
+
   warning: {
     light: '#fde047',
     DEFAULT: '#eab308',
     dark: '#ca8a04',
   },
-  
+
   error: {
     light: '#fca5a5',
     DEFAULT: '#ef4444',
     dark: '#dc2626',
   },
-  
+
   // Gradient Presets
   gradients: {
     aurora: 'linear-gradient(45deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
@@ -320,7 +317,7 @@ export const colors = {
     ocean: 'linear-gradient(to right, #43e97b 0%, #38f9d7 100%)',
     fire: 'linear-gradient(45deg, #ff6b6b 0%, #ffd93d 100%)',
     mystic: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  }
+  },
 }
 ```
 
@@ -435,7 +432,7 @@ export function GlassCard({
   ...props
 }: GlassCardProps) {
   const Component = animated ? motion.div : 'div'
-  
+
   return (
     <Component
       className={cn(glassCardVariants({ variant, size, interactive }), className)}
@@ -1269,7 +1266,7 @@ export function TriggerVisualization({
     <div className="grid grid-cols-2 gap-4">
       {triggers.map((trigger, index) => {
         const Icon = icons[trigger.type]
-        
+
         return (
           <motion.div
             key={index}
@@ -1298,7 +1295,7 @@ export function TriggerVisualization({
                   </p>
                 </div>
               </div>
-              
+
               <button
                 onClick={() => onToggle(index)}
                 className={cn(
@@ -1380,7 +1377,7 @@ export function FrequencyCapping({ settings, onChange }: FrequencyCappingProps) 
             </p>
           </div>
         </div>
-        
+
         <button
           onClick={() => {
             const newEnabled = !settings.enabled
@@ -1552,16 +1549,16 @@ export function useReducedMotion() {
 }
 
 // Motion-safe component wrapper
-export function MotionSafe({ children, fallback }: { 
+export function MotionSafe({ children, fallback }: {
   children: React.ReactNode
-  fallback?: React.ReactNode 
+  fallback?: React.ReactNode
 }) {
   const prefersReducedMotion = useReducedMotion()
-  
+
   if (prefersReducedMotion) {
     return <>{fallback || children}</>
   }
-  
+
   return <>{children}</>
 }
 ```
@@ -1581,7 +1578,7 @@ interface SwipeActionsProps {
 
 export function SwipeActions({ onDelete, onArchive, children }: SwipeActionsProps) {
   const controls = useAnimation()
-  
+
   const handlers = useSwipeable({
     onSwipedLeft: () => {
       controls.start({ x: -100 })
@@ -1609,7 +1606,7 @@ export function SwipeActions({ onDelete, onArchive, children }: SwipeActionsProp
       >
         {children}
       </motion.div>
-      
+
       <div className="absolute inset-0 flex">
         <div className="flex-1 bg-green-500 flex items-center justify-start px-4">
           <span className="text-white font-medium">Archive</span>
@@ -1648,7 +1645,7 @@ export function EmbeddableWidget({ config }: { config: WidgetConfig }) {
 
   useEffect(() => {
     setMounted(true)
-    
+
     // Listen for postMessage events from parent
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'WIDGET_COMMAND') {
@@ -2255,9 +2252,9 @@ export function SkipLinks() {
 // components/a11y/focus-trap.tsx
 import { useEffect, useRef } from 'react'
 
-export function FocusTrap({ children, active }: { 
+export function FocusTrap({ children, active }: {
   children: React.ReactNode
-  active: boolean 
+  active: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -2413,7 +2410,7 @@ export function VirtualList({ items }: { items: any[] }) {
 
 ```typescript
 // Type-safe component props with discriminated unions
-type ButtonProps = 
+type ButtonProps =
   | { variant: 'primary'; icon?: never }
   | { variant: 'icon'; icon: React.ReactNode }
   | { variant: 'link'; href: string }
@@ -2424,9 +2421,11 @@ type StrictEventHandler<T = Element, E = Event> = (
 ) => void
 
 // Deep partial type for nested updates
-type DeepPartial<T> = T extends object ? {
-  [P in keyof T]?: DeepPartial<T[P]>
-} : T
+type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>
+    }
+  : T
 
 // Branded types for domain modeling
 type UserId = string & { readonly brand: unique symbol }
@@ -2593,19 +2592,19 @@ export function ContentSkeleton() {
 export const performanceMetrics = {
   // Core Web Vitals
   LCP: 2500, // Largest Contentful Paint < 2.5s
-  FID: 100,  // First Input Delay < 100ms
-  CLS: 0.1,  // Cumulative Layout Shift < 0.1
-  
+  FID: 100, // First Input Delay < 100ms
+  CLS: 0.1, // Cumulative Layout Shift < 0.1
+
   // Additional metrics
-  TTI: 3500,    // Time to Interactive < 3.5s
-  FCP: 1800,    // First Contentful Paint < 1.8s
-  TTFB: 600,    // Time to First Byte < 600ms
-  
+  TTI: 3500, // Time to Interactive < 3.5s
+  FCP: 1800, // First Contentful Paint < 1.8s
+  TTFB: 600, // Time to First Byte < 600ms
+
   // Bundle size targets
   bundleSize: {
-    initial: 200,    // Initial JS < 200KB
-    lazy: 150,       // Lazy chunks < 150KB each
-    css: 60,         // CSS < 60KB
+    initial: 200, // Initial JS < 200KB
+    lazy: 150, // Lazy chunks < 150KB each
+    css: 60, // CSS < 60KB
   },
 }
 
@@ -2628,7 +2627,9 @@ export function usePerformanceMonitor() {
       }
     })
 
-    observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] })
+    observer.observe({
+      entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'],
+    })
 
     return () => observer.disconnect()
   }, [])
@@ -2650,7 +2651,7 @@ describe('GlassCard', () => {
         Content
       </GlassCard>
     )
-    
+
     const card = screen.getByTestId('glass-card')
     expect(card).toHaveClass('from-purple-500/10')
   })
@@ -2658,16 +2659,16 @@ describe('GlassCard', () => {
   it('handles interactive states correctly', async () => {
     const user = userEvent.setup()
     const handleClick = jest.fn()
-    
+
     render(
       <GlassCard interactive onClick={handleClick}>
         Click me
       </GlassCard>
     )
-    
+
     const card = screen.getByText('Click me')
     await user.click(card)
-    
+
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 
@@ -2677,7 +2678,7 @@ describe('GlassCard', () => {
         Animated content
       </GlassCard>
     )
-    
+
     const motionDiv = container.querySelector('[style*="transform"]')
     expect(motionDiv).toBeInTheDocument()
   })

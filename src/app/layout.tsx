@@ -8,7 +8,8 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Testimonial Tiger - Beautiful Testimonial Collection & Display',
-  description: 'Transform customer feedback into powerful social proof with our beautiful testimonial collection and display platform.',
+  description:
+    'Transform customer feedback into powerful social proof with our beautiful testimonial collection and display platform.',
 }
 
 export default function RootLayout({
@@ -20,9 +21,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
-          <TRPCReactProvider>
-            {children}
-          </TRPCReactProvider>
+          <TRPCReactProvider>{children}</TRPCReactProvider>
         </body>
       </html>
     </ClerkProvider>

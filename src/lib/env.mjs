@@ -3,7 +3,7 @@ import { z } from 'zod'
 const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().url(),
-  
+
   // Clerk
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
   CLERK_SECRET_KEY: z.string(),
@@ -11,11 +11,13 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLERK_SIGN_UP_URL: z.string().default('/sign-up'),
   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: z.string().default('/dashboard'),
   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: z.string().default('/dashboard'),
-  
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url(),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
+
   // Optional
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),

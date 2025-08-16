@@ -1,12 +1,18 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
-  
+
   if (!userId) {
     redirect('/sign-in')
   }
@@ -21,16 +27,33 @@ export default async function DashboardPage() {
             <span className="text-xl font-bold">Testimonial Tiger</span>
           </div>
           <nav className="flex items-center gap-6">
-            <Link href="/dashboard" className="font-medium">Dashboard</Link>
-            <Link href="/dashboard/forms" className="text-gray-600 dark:text-gray-400">Forms</Link>
-            <Link href="/dashboard/testimonials" className="text-gray-600 dark:text-gray-400">Testimonials</Link>
-            <Link href="/dashboard/widgets" className="text-gray-600 dark:text-gray-400">Widgets</Link>
+            <Link href="/dashboard" className="font-medium">
+              Dashboard
+            </Link>
+            <Link
+              href="/dashboard/forms"
+              className="text-gray-600 dark:text-gray-400"
+            >
+              Forms
+            </Link>
+            <Link
+              href="/dashboard/testimonials"
+              className="text-gray-600 dark:text-gray-400"
+            >
+              Testimonials
+            </Link>
+            <Link
+              href="/dashboard/widgets"
+              className="text-gray-600 dark:text-gray-400"
+            >
+              Widgets
+            </Link>
           </nav>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto p-6 space-y-6">
+      <main className="container mx-auto space-y-6 p-6">
         {/* Welcome Section */}
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -82,9 +105,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">0.0</div>
-              <p className="text-xs text-muted-foreground">
-                from 0 reviews
-              </p>
+              <p className="text-xs text-muted-foreground">from 0 reviews</p>
             </CardContent>
           </Card>
 
@@ -114,19 +135,13 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="flex gap-4">
             <Link href="/dashboard/forms/new">
-              <Button>
-                Create New Form
-              </Button>
+              <Button>Create New Form</Button>
             </Link>
             <Link href="/dashboard/widgets/new">
-              <Button variant="outline">
-                Create Widget
-              </Button>
+              <Button variant="outline">Create Widget</Button>
             </Link>
             <Link href="/dashboard/integrations">
-              <Button variant="outline">
-                Setup Integrations
-              </Button>
+              <Button variant="outline">Setup Integrations</Button>
             </Link>
           </CardContent>
         </Card>
@@ -140,7 +155,7 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="py-8 text-center text-gray-500">
               No testimonials yet. Create a form to start collecting feedback!
             </div>
           </CardContent>
