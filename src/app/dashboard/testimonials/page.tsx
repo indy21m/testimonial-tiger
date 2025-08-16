@@ -147,7 +147,7 @@ export default function TestimonialsPage() {
             <CardHeader className="pb-2">
               <CardDescription>Pending</CardDescription>
               <CardTitle className="text-2xl text-yellow-600">
-                {testimonials.filter(t => t.status === 'pending').length}
+                {testimonials.filter(t => t.status === 'pending' || t.status === null).length}
               </CardTitle>
             </CardHeader>
           </Card>

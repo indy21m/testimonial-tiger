@@ -15,9 +15,9 @@ interface TestimonialCardProps {
     customerPhoto?: string | null
     content: string
     rating?: number | null
-    status: 'pending' | 'approved' | 'rejected'
-    featured: boolean
-    submittedAt: Date
+    status: 'pending' | 'approved' | 'rejected' | null
+    featured: boolean | null
+    submittedAt: Date | null
     videoUrl?: string | null
   }
   isSelected: boolean
@@ -40,6 +40,8 @@ export function TestimonialCard({
     approved: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
     rejected: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
   }
+  
+  const status = testimonial.status || 'pending'
 
   return (
     <Card className={`transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}>
@@ -69,8 +71,8 @@ export function TestimonialCard({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold">{testimonial.customerName}</h3>
-                <Badge className={statusColors[testimonial.status]} variant="secondary">
-                  {testimonial.status}
+                <Badge className={statusColors[status]} variant="secondary">
+                  {status}
                 </Badge>
                 {testimonial.featured && (
                   <Badge variant="default" className="bg-purple-600">
@@ -92,10 +94,12 @@ export function TestimonialCard({
                     {testimonial.customerCompany}
                   </div>
                 )}
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {formatDistanceToNow(new Date(testimonial.submittedAt), { addSuffix: true })}
-                </div>
+                {testimonial.submittedAt && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {formatDistanceToNow(new Date(testimonial.submittedAt), { addSuffix: true })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -129,7 +133,7 @@ export function TestimonialCard({
 
         {/* Actions */}
         <div className="flex gap-2">
-          {testimonial.status === 'pending' && (
+          {status === 'pending' && (
             <>
               <Button size="sm" onClick={onApprove}>
                 <CheckCircle className="w-4 h-4 mr-1" />
@@ -142,7 +146,7 @@ export function TestimonialCard({
             </>
           )}
           
-          {testimonial.status === 'approved' && (
+          {status === 'approved' && (
             <Button
               size="sm"
               variant={testimonial.featured ? 'default' : 'outline'}
@@ -153,7 +157,7 @@ export function TestimonialCard({
             </Button>
           )}
 
-          {testimonial.status === 'rejected' && (
+          {status === 'rejected' && (
             <Button size="sm" variant="outline" onClick={onApprove}>
               <CheckCircle className="w-4 h-4 mr-1" />
               Approve
