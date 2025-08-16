@@ -5,7 +5,7 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import { forms } from '@/server/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 
 const formConfigSchema = z.object({
@@ -141,5 +141,18 @@ export const formRouter = createTRPCRouter({
       }
 
       return deleted[0]
+    }),
+
+  trackView: publicProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(forms)
+        .set({
+          views: sql`${forms.views} + 1`,
+        })
+        .where(eq(forms.id, input.id))
+
+      return { success: true }
     }),
 })

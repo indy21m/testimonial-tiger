@@ -13,14 +13,14 @@ export const testimonialRouter = createTRPCRouter({
     .input(
       z.object({
         formId: z.string().uuid(),
-        customerName: z.string().min(1),
+        customerName: z.string().min(1).optional(),
         customerEmail: z.string().email().optional(),
         customerCompany: z.string().optional(),
         customerPhoto: z.string().optional(),
         content: z.string().min(10),
-        rating: z.number().min(1).max(5).optional(),
+        rating: z.number().min(1).max(5),
         videoUrl: z.string().optional(),
-        customFields: z.record(z.string(), z.any()).optional(),
+        customAnswers: z.record(z.string(), z.any()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -37,7 +37,15 @@ export const testimonialRouter = createTRPCRouter({
       const testimonial = await ctx.db
         .insert(testimonials)
         .values({
-          ...input,
+          formId: input.formId,
+          customerName: input.customerName || 'Anonymous',
+          customerEmail: input.customerEmail,
+          customerCompany: input.customerCompany,
+          customerPhoto: input.customerPhoto,
+          content: input.content,
+          rating: input.rating,
+          videoUrl: input.videoUrl,
+          customFields: input.customAnswers || {},
           status: form.config.settings.autoApprove ? 'approved' : 'pending',
           approvedAt: form.config.settings.autoApprove ? new Date() : null,
         })
