@@ -82,7 +82,7 @@ export default function WidgetEditorPage() {
   const copyEmbedCode = () => {
     const embedCode = `<!-- Testimonial Tiger Widget -->
 <div id="tt-widget-${widgetId}"></div>
-<script src="${window.location.origin}/widget/${widgetId}.js" async></script>`
+<script src="${window.location.origin}/widget/${widgetId}" async></script>`
     
     navigator.clipboard.writeText(embedCode)
     setEmbedCodeCopied(true)
@@ -446,7 +446,7 @@ export default function WidgetEditorPage() {
                     <code className="text-sm whitespace-pre font-mono">
 {`<!-- Testimonial Tiger Widget -->
 <div id="tt-widget-${widgetId}"></div>
-<script src="${window.location.origin}/widget/${widgetId}.js" async></script>`}
+<script src="${window.location.origin}/widget/${widgetId}" async></script>`}
                     </code>
                   </div>
                   <Button 

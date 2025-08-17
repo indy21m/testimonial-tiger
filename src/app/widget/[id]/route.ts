@@ -1,0 +1,398 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { db, widgets, testimonials } from '@/server/db'
+import { eq, and, desc, gte, inArray, sql } from 'drizzle-orm'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params
+  try {
+    const widgetId = params.id.replace('.js', '')
+    
+    // Get widget configuration
+    const widget = await db.query.widgets.findFirst({
+      where: eq(widgets.id, widgetId),
+    })
+
+    if (!widget) {
+      return new NextResponse('Widget not found', { status: 404 })
+    }
+
+    // Check domain whitelist
+    const referer = request.headers.get('referer')
+    if (widget.allowedDomains && widget.allowedDomains.length > 0 && referer) {
+      try {
+        const domain = new URL(referer).hostname
+        if (!widget.allowedDomains.includes(domain)) {
+          return new NextResponse('Domain not allowed', { status: 403 })
+        }
+      } catch {
+        // Invalid referer URL
+        return new NextResponse('Invalid referer', { status: 403 })
+      }
+    }
+
+    // Build filter conditions
+    const conditions = [eq(testimonials.status, 'approved')]
+    
+    if (widget.config.filters.formIds && widget.config.filters.formIds.length > 0) {
+      conditions.push(inArray(testimonials.formId, widget.config.filters.formIds))
+    }
+    
+    if (widget.config.filters.onlyFeatured) {
+      conditions.push(eq(testimonials.featured, true))
+    }
+    
+    if (widget.config.filters.minRating) {
+      conditions.push(gte(testimonials.rating, widget.config.filters.minRating))
+    }
+
+    const limit = widget.config.filters.maxItems || 20
+
+    // Get testimonials
+    const widgetTestimonials = await db.query.testimonials.findMany({
+      where: and(...conditions),
+      orderBy: [desc(testimonials.submittedAt)],
+      limit,
+    })
+
+    // Track impression (non-blocking)
+    db.update(widgets)
+      .set({ impressions: sql`${widgets.impressions} + 1` })
+      .where(eq(widgets.id, widget.id))
+      .then(() => {})
+      .catch(console.error)
+
+    // Generate JavaScript code
+    const js = generateWidgetJS(widget, widgetTestimonials)
+
+    return new NextResponse(js, {
+      headers: {
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'public, max-age=60',
+        'Access-Control-Allow-Origin': '*',
+      },
+    })
+  } catch (error) {
+    console.error('Widget error:', error)
+    return new NextResponse('Internal server error', { status: 500 })
+  }
+}
+
+function generateWidgetJS(widget: any, testimonials: any[]) {
+  const { config } = widget
+  const widgetId = widget.id
+
+  // Generate CSS
+  const css = `
+    .tt-widget-${widgetId} {
+      font-family: ${config.styling.fontFamily}, sans-serif;
+      color: ${config.styling.textColor};
+      --tt-primary: ${config.styling.primaryColor};
+      --tt-bg: ${config.styling.backgroundColor};
+      --tt-text: ${config.styling.textColor};
+      --tt-border: ${config.styling.borderColor};
+      --tt-radius: ${config.styling.borderRadius};
+    }
+    
+    .tt-widget-${widgetId} * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .tt-widget-${widgetId} .tt-testimonial {
+      background: var(--tt-bg);
+      border: 1px solid var(--tt-border);
+      border-radius: var(--tt-radius);
+      padding: ${config.styling.layout === 'compact' ? '12px' : config.styling.layout === 'spacious' ? '24px' : '16px'};
+      ${config.styling.shadow === 'sm' ? 'box-shadow: 0 1px 3px rgba(0,0,0,0.12);' : 
+        config.styling.shadow === 'md' ? 'box-shadow: 0 4px 6px rgba(0,0,0,0.1);' : 
+        config.styling.shadow === 'lg' ? 'box-shadow: 0 10px 15px rgba(0,0,0,0.1);' : ''}
+    }
+    
+    .tt-widget-${widgetId} .tt-rating {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    
+    .tt-widget-${widgetId} .tt-star {
+      width: 16px;
+      height: 16px;
+      fill: #FFC107;
+    }
+    
+    .tt-widget-${widgetId} .tt-star.empty {
+      fill: #E0E0E0;
+    }
+    
+    .tt-widget-${widgetId} .tt-content {
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    .tt-widget-${widgetId} .tt-customer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .tt-widget-${widgetId} .tt-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #E0E0E0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .tt-widget-${widgetId} .tt-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    .tt-widget-${widgetId} .tt-customer-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tt-widget-${widgetId} .tt-customer-name {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .tt-widget-${widgetId} .tt-customer-company {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    
+    /* Widget type specific styles */
+    .tt-widget-${widgetId}.tt-wall {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    
+    .tt-widget-${widgetId}.tt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .tt-widget-${widgetId}.tt-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .tt-widget-${widgetId}.tt-carousel {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tt-widget-${widgetId}.tt-carousel .tt-carousel-inner {
+      display: flex;
+      transition: transform 0.3s ease;
+    }
+    
+    .tt-widget-${widgetId}.tt-carousel .tt-testimonial {
+      flex: 0 0 100%;
+    }
+    
+    .tt-widget-${widgetId}.tt-carousel .tt-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: white;
+      border: 1px solid var(--tt-border);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .tt-widget-${widgetId}.tt-carousel .tt-nav.prev {
+      left: 16px;
+    }
+    
+    .tt-widget-${widgetId}.tt-carousel .tt-nav.next {
+      right: 16px;
+    }
+    
+    .tt-widget-${widgetId}.tt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--tt-bg);
+      border: 1px solid var(--tt-border);
+      border-radius: 100px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  `
+
+  // Generate HTML
+  let html = ''
+  
+  switch (widget.type) {
+    case 'wall':
+      html = `<div class="tt-widget-${widgetId} tt-wall">${testimonials.map(t => renderTestimonial(t, config)).join('')}</div>`
+      break
+      
+    case 'grid':
+      html = `<div class="tt-widget-${widgetId} tt-grid">${testimonials.slice(0, config.display.itemsPerPage || 9).map(t => renderTestimonial(t, config)).join('')}</div>`
+      break
+      
+    case 'carousel':
+      html = `
+        <div class="tt-widget-${widgetId} tt-carousel">
+          <div class="tt-carousel-inner">
+            ${testimonials.map(t => renderTestimonial(t, config)).join('')}
+          </div>
+          ${testimonials.length > 1 ? `
+            <div class="tt-nav prev">‹</div>
+            <div class="tt-nav next">›</div>
+          ` : ''}
+        </div>
+      `
+      break
+      
+    case 'single':
+      html = testimonials[0] ? `<div class="tt-widget-${widgetId}">${renderTestimonial(testimonials[0], config)}</div>` : ''
+      break
+      
+    case 'badge':
+      const avgRating = testimonials.length > 0 
+        ? testimonials.reduce((acc, t) => acc + (t.rating || 0), 0) / testimonials.length
+        : 0
+      html = `
+        <div class="tt-widget-${widgetId} tt-badge">
+          <div class="tt-rating">
+            ${[1,2,3,4,5].map(i => `
+              <svg class="tt-star ${i <= Math.round(avgRating) ? '' : 'empty'}" viewBox="0 0 24 24">
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+              </svg>
+            `).join('')}
+          </div>
+          <span>${avgRating.toFixed(1)} (${testimonials.length} reviews)</span>
+        </div>
+      `
+      break
+  }
+
+  // Generate JavaScript
+  const js = `
+(function() {
+  // Add styles
+  var style = document.createElement('style');
+  style.textContent = \`${css}\`;
+  document.head.appendChild(style);
+  
+  // Add HTML
+  var container = document.getElementById('tt-widget-${widgetId}');
+  if (container) {
+    container.innerHTML = \`${html.replace(/\`/g, '\\`')}\`;
+    
+    // Initialize carousel if needed
+    ${widget.type === 'carousel' && testimonials.length > 1 ? `
+      var currentSlide = 0;
+      var slides = container.querySelectorAll('.tt-testimonial');
+      var inner = container.querySelector('.tt-carousel-inner');
+      var prevBtn = container.querySelector('.tt-nav.prev');
+      var nextBtn = container.querySelector('.tt-nav.next');
+      
+      function showSlide(index) {
+        currentSlide = (index + slides.length) % slides.length;
+        inner.style.transform = 'translateX(-' + (currentSlide * 100) + '%)';
+      }
+      
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+          showSlide(currentSlide - 1);
+        });
+      }
+      
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+          showSlide(currentSlide + 1);
+        });
+      }
+      
+      // Auto-play
+      setInterval(function() {
+        showSlide(currentSlide + 1);
+      }, 5000);
+    ` : ''}
+  }
+})();
+  `
+
+  return js
+}
+
+function renderTestimonial(testimonial: any, config: any): string {
+  const content = config.display.maxLength && testimonial.content.length > config.display.maxLength
+    ? testimonial.content.slice(0, config.display.maxLength) + '...'
+    : testimonial.content
+
+  return `
+    <div class="tt-testimonial">
+      ${config.display.showRating && testimonial.rating ? `
+        <div class="tt-rating">
+          ${[1,2,3,4,5].map(i => `
+            <svg class="tt-star ${i <= testimonial.rating ? '' : 'empty'}" viewBox="0 0 24 24">
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+            </svg>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      <div class="tt-content">${escapeHtml(content)}</div>
+      
+      <div class="tt-customer">
+        ${config.display.showPhoto ? `
+          <div class="tt-avatar">
+            ${testimonial.customerPhoto 
+              ? `<img src="${escapeHtml(testimonial.customerPhoto)}" alt="${escapeHtml(testimonial.customerName)}" />`
+              : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>`
+            }
+          </div>
+        ` : ''}
+        
+        <div class="tt-customer-info">
+          <div class="tt-customer-name">${escapeHtml(testimonial.customerName)}</div>
+          ${config.display.showCompany && testimonial.customerCompany ? `
+            <div class="tt-customer-company">${escapeHtml(testimonial.customerCompany)}</div>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }
+  return text.replace(/[&<>"']/g, m => map[m] || m)
+}

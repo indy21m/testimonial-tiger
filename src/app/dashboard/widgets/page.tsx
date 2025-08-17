@@ -109,7 +109,7 @@ export default function WidgetsPage() {
   const copyEmbedCode = (widgetId: string) => {
     const embedCode = `<!-- Testimonial Tiger Widget -->
 <div id="tt-widget-${widgetId}"></div>
-<script src="${window.location.origin}/widget/${widgetId}.js" async></script>`
+<script src="${window.location.origin}/widget/${widgetId}" async></script>`
     
     navigator.clipboard.writeText(embedCode)
     toast.success('Embed code copied to clipboard')
@@ -270,7 +270,7 @@ export default function WidgetsPage() {
                                 <code className="text-sm whitespace-pre">
 {`<!-- Testimonial Tiger Widget -->
 <div id="tt-widget-${widget.id}"></div>
-<script src="${window.location.origin}/widget/${widget.id}.js" async></script>`}
+<script src="${window.location.origin}/widget/${widget.id}" async></script>`}
                                 </code>
                               </div>
                               <DialogFooter>

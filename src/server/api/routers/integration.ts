@@ -135,4 +135,103 @@ export const integrationRouter = createTRPCRouter({
 
       return logs
     }),
+
+  toggle: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        isActive: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updated = await ctx.db
+        .update(integrations)
+        .set({ isActive: input.isActive })
+        .where(
+          and(
+            eq(integrations.id, input.id),
+            eq(integrations.userId, ctx.userId)
+          )
+        )
+        .returning()
+
+      if (!updated.length) {
+        throw new TRPCError({ code: 'NOT_FOUND' })
+      }
+
+      return updated[0]
+    }),
+
+  test: protectedProcedure
+    .input(
+      z.object({
+        integrationId: z.string().uuid(),
+        data: z.any(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify ownership
+      const integration = await ctx.db.query.integrations.findFirst({
+        where: and(
+          eq(integrations.id, input.integrationId),
+          eq(integrations.userId, ctx.userId)
+        ),
+      })
+
+      if (!integration) {
+        throw new TRPCError({ code: 'NOT_FOUND' })
+      }
+
+      if (!integration.config.webhookUrl) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No webhook URL configured',
+        })
+      }
+
+      // Send test webhook
+      try {
+        const response = await fetch(integration.config.webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...integration.config.headers,
+          },
+          body: JSON.stringify(input.data),
+        })
+
+        const responseText = await response.text()
+
+        // Log the test
+        await ctx.db.insert(webhookLogs).values({
+          integrationId: integration.id,
+          event: 'test',
+          status: response.ok ? 'success' : 'failed',
+          statusCode: response.status,
+          response: responseText.slice(0, 500),
+        })
+
+        if (!response.ok) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Webhook returned ${response.status}`,
+          })
+        }
+
+        return { success: true }
+      } catch (error) {
+        // Log the failure
+        await ctx.db.insert(webhookLogs).values({
+          integrationId: integration.id,
+          event: 'test',
+          status: 'failed',
+          response: error instanceof Error ? error.message : 'Unknown error',
+        })
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to send webhook',
+        })
+      }
+    }),
 })
