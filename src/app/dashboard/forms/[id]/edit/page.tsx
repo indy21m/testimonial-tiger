@@ -49,7 +49,7 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
       debounce((updates: Record<string, unknown>) => {
         updateForm.mutate({ id, ...updates })
       }, 1000),
-    [id, updateForm]
+    [id] // Remove updateForm from dependencies to prevent recreating on each render
   )
 
   const handleConfigUpdate = useCallback(
@@ -171,6 +171,73 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                       rows={3}
                     />
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Pre-Testimonial Prompt */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pre-Testimonial Prompt</CardTitle>
+                  <CardDescription>
+                    Guide customers with prompts before they write their testimonial
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="prompt-enabled">Enable Pre-Prompt</Label>
+                    <input
+                      id="prompt-enabled"
+                      type="checkbox"
+                      checked={form.config.prePrompt?.enabled || false}
+                      onChange={(e) => {
+                        const currentPrompt = form.config.prePrompt || {
+                          enabled: false,
+                          title: 'Before you start...',
+                          questions: [
+                            'What specific problem did our product solve for you?',
+                            'How did it improve your workflow or results?',
+                            'Would you recommend this to others? Why?'
+                          ]
+                        }
+                        handleConfigUpdate({
+                          prePrompt: { ...currentPrompt, enabled: e.target.checked }
+                        })
+                      }}
+                      className="rounded"
+                    />
+                  </div>
+                  
+                  {form.config.prePrompt?.enabled && (
+                    <>
+                      <div>
+                        <Label>Prompt Title</Label>
+                        <Input
+                          value={form.config.prePrompt?.title || 'Before you start...'}
+                          onChange={(e) => handleConfigUpdate({
+                            prePrompt: { ...form.config.prePrompt, title: e.target.value }
+                          })}
+                          placeholder="Before you start..."
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Prompt Questions (one per line)</Label>
+                        <Textarea
+                          value={form.config.prePrompt?.questions?.join('\n') || ''}
+                          onChange={(e) => handleConfigUpdate({
+                            prePrompt: {
+                              ...form.config.prePrompt,
+                              questions: e.target.value.split('\n').filter(q => q.trim())
+                            }
+                          })}
+                          placeholder="What specific problem did our product solve?
+How did it improve your workflow?
+Would you recommend this to others?"
+                          rows={5}
+                        />
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 

@@ -42,6 +42,11 @@ interface TestimonialFormProps {
         redirectUrl?: string
         successMessage: string
       }
+      prePrompt?: {
+        enabled: boolean
+        title: string
+        questions: string[]
+      }
       styling: {
         theme: 'minimal' | 'modern' | 'bold' | 'custom'
         primaryColor: string
@@ -174,6 +179,23 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
           <h1 className="text-3xl font-bold mb-3">{form.config.title}</h1>
           <p className="text-lg opacity-95">{form.config.description}</p>
         </div>
+
+        {/* Pre-Prompt Section */}
+        {form.config.prePrompt?.enabled && form.config.prePrompt.questions.length > 0 && (
+          <div className="p-8 border-b bg-gray-50 dark:bg-gray-800/50">
+            <h2 className="text-lg font-semibold mb-3" style={{ color: styling.primaryColor }}>
+              {form.config.prePrompt.title}
+            </h2>
+            <ul className="space-y-2">
+              {form.config.prePrompt.questions.map((question, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-sm" style={{ color: styling.primaryColor }}>•</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{question}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Form Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-6">

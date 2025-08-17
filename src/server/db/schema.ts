@@ -74,6 +74,11 @@ export const forms = pgTable(
           redirectUrl?: string
           successMessage: string
         }
+        prePrompt?: {
+          enabled: boolean
+          title: string
+          questions: string[]
+        }
         styling: {
           theme: 'minimal' | 'modern' | 'bold' | 'custom'
           primaryColor: string
