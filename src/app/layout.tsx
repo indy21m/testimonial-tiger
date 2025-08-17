@@ -13,6 +13,20 @@ export const metadata: Metadata = {
   title: 'Testimonial Tiger - Beautiful Testimonial Collection & Display',
   description:
     'Transform customer feedback into powerful social proof with our beautiful testimonial collection and display platform.',
+  icons: {
+    icon: [
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+    other: [
+      {
+        rel: 'icon',
+        url: '/favicon.ico',
+      },
+    ],
+  },
+  manifest: '/site.webmanifest',
 }
 
 export default function RootLayout({
