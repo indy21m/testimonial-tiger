@@ -21,6 +21,7 @@ import { FormPreview } from '@/components/features/form-preview'
 import { FormStyleEditor } from '@/components/features/form-style-editor'
 import { FormSettingsEditor } from '@/components/features/form-settings-editor'
 import { QuestionBuilder } from '@/components/features/question-builder'
+import { CustomDomainManager } from '@/components/features/custom-domain-manager'
 
 interface FormEditorPageProps {
   params: Promise<{ id: string }>
@@ -275,10 +276,18 @@ Would you recommend this to others?"
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
             >
               <FormSettingsEditor
                 settings={form.config.settings}
                 onChange={(settings) => handleConfigUpdate({ settings })}
+              />
+              
+              {/* Custom Domain Manager */}
+              <CustomDomainManager
+                formId={form.id}
+                currentDomain={form.customDomain}
+                isVerified={form.customDomainVerified || false}
               />
             </motion.div>
           )}

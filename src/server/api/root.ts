@@ -4,6 +4,7 @@ import { formRouter } from '@/server/api/routers/form'
 import { testimonialRouter } from '@/server/api/routers/testimonial'
 import { widgetRouter } from '@/server/api/routers/widget'
 import { integrationRouter } from '@/server/api/routers/integration'
+import { domainRouter } from '@/server/api/routers/domain'
 
 export const appRouter = createTRPCRouter({
   user: userRouter,
@@ -11,6 +12,7 @@ export const appRouter = createTRPCRouter({
   testimonial: testimonialRouter,
   widget: widgetRouter,
   integration: integrationRouter,
+  domain: domainRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -121,15 +121,21 @@ export function TestimonialCard({
       </CardHeader>
 
       <CardContent>
+        {/* Video Display */}
+        {testimonial.videoUrl && (
+          <div className="mb-4">
+            <video
+              src={testimonial.videoUrl}
+              controls
+              className="w-full rounded-lg max-h-48 bg-black"
+              preload="metadata"
+            />
+          </div>
+        )}
+
         <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
           {testimonial.content}
         </p>
-
-        {testimonial.videoUrl && (
-          <Badge variant="outline" className="mb-4">
-            📹 Has video
-          </Badge>
-        )}
 
         {/* Actions */}
         <div className="flex gap-2">

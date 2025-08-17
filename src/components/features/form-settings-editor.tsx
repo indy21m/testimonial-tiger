@@ -117,10 +117,7 @@ export function FormSettingsEditor({
 
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="allow-video" className="flex items-center gap-2">
-                Allow Video Recording
-                <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
-              </Label>
+              <Label htmlFor="allow-video">Allow Video Recording</Label>
               <p className="text-sm text-gray-500">Enable video testimonials</p>
             </div>
             <Switch
@@ -129,7 +126,6 @@ export function FormSettingsEditor({
               onCheckedChange={(checked) =>
                 handleChange({ allowVideo: checked })
               }
-              disabled
             />
           </div>
 
@@ -246,30 +242,6 @@ export function FormSettingsEditor({
         </CardContent>
       </Card>
 
-      {/* Custom Domain */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Custom Domain
-            <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
-          </CardTitle>
-          <CardDescription>
-            Use your own domain for testimonial forms (e.g., reviews.yourdomain.com)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Input
-              placeholder="reviews.yourdomain.com"
-              disabled
-              className="opacity-50"
-            />
-            <p className="text-xs text-gray-500">
-              Configure a custom domain to host your testimonial forms. This feature will be available soon.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Advanced Settings */}
       <Card>

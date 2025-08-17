@@ -4,6 +4,15 @@ import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Camera, Video, Upload, X } from 'lucide-react'
+import { VideoRecorder } from '@/components/features/video-recorder'
+import { uploadImage, uploadVideoBlob } from '@/lib/upload'
+import { toast } from 'sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface MediaUploadProps {
   allowImage: boolean
@@ -28,6 +37,7 @@ export function MediaUpload({
     name: string
   } | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [showVideoRecorder, setShowVideoRecorder] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,9 +73,8 @@ export function MediaUpload({
     setIsUploading(true)
 
     try {
-      // In a real implementation, you would upload to a service like Uploadthing or Vercel Blob
-      // For now, we'll create a local URL
-      const url = URL.createObjectURL(file)
+      // Upload to storage service
+      const url = await uploadImage(file)
       
       setUploadedFile({
         url,
@@ -76,7 +85,7 @@ export function MediaUpload({
       onUpload(url, isImage ? 'image' : 'video')
     } catch (error) {
       console.error('Upload failed:', error)
-      alert('Failed to upload file. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Failed to upload file')
     } finally {
       setIsUploading(false)
     }
@@ -90,6 +99,27 @@ export function MediaUpload({
     onUpload('', 'image')
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+  }
+
+  const handleVideoRecordingComplete = async (blob: Blob, _url: string) => {
+    setIsUploading(true)
+    try {
+      // Upload video blob to storage
+      const uploadedUrl = await uploadVideoBlob(blob)
+      
+      setUploadedFile({
+        url: uploadedUrl,
+        type: 'video',
+        name: `video-${Date.now()}.webm`,
+      })
+      onUpload(uploadedUrl, 'video')
+      setShowVideoRecorder(false)
+    } catch (error) {
+      console.error('Video upload failed:', error)
+      toast.error('Failed to upload video. Please try again.')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -136,16 +166,28 @@ export function MediaUpload({
             {allowVideo && `Videos up to 50MB (${maxVideoLength}s max)`}
           </p>
           
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            disabled={isUploading}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            {isUploading ? 'Uploading...' : 'Choose File'}
-          </Button>
+          <div className="flex gap-3 justify-center mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isUploading}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {isUploading ? 'Uploading...' : 'Choose File'}
+            </Button>
+            {allowVideo && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowVideoRecorder(true)}
+              >
+                <Video className="w-4 h-4 mr-2" />
+                Record Video
+              </Button>
+            )}
+          </div>
         </Card>
       ) : (
         <Card 
@@ -203,6 +245,24 @@ export function MediaUpload({
           )}
         </Card>
       )}
+
+      {/* Video Recorder Dialog */}
+      <Dialog open={showVideoRecorder} onOpenChange={setShowVideoRecorder}>
+        <DialogContent className="max-w-4xl p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Record Video Testimonial</DialogTitle>
+          </DialogHeader>
+          <div className="p-6 pt-4">
+            <VideoRecorder
+              maxLength={maxVideoLength}
+              onRecordingComplete={handleVideoRecordingComplete}
+              onCancel={() => setShowVideoRecorder(false)}
+              primaryColor={primaryColor}
+              borderRadius={borderRadius}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
