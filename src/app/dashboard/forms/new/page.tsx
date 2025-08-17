@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { DashboardNav } from '@/components/features/dashboard-nav'
 import {
   Card,
   CardContent,
@@ -38,15 +39,7 @@ export default function NewFormPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🐅</span>
-            <span className="text-xl font-bold">Testimonial Tiger</span>
-          </div>
-        </div>
-      </header>
+      <DashboardNav />
 
       {/* Main Content */}
       <main className="container mx-auto p-6">

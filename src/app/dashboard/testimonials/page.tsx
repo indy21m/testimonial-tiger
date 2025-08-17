@@ -4,11 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
+import { DashboardNav } from '@/components/features/dashboard-nav'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TestimonialCard } from '@/components/features/testimonial-card'
 import { TestimonialFilters } from '@/components/features/testimonial-filters'
-import { Download, CheckCircle, Trash2 } from 'lucide-react'
+import { Download, CheckCircle, Trash2, Plus } from 'lucide-react'
 
 export default function TestimonialsPage() {
   const [status, setStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
@@ -95,29 +96,7 @@ export default function TestimonialsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🐅</span>
-            <span className="text-xl font-bold">Testimonial Tiger</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-gray-600 dark:text-gray-400">
-              Dashboard
-            </Link>
-            <Link href="/dashboard/forms" className="text-gray-600 dark:text-gray-400">
-              Forms
-            </Link>
-            <Link href="/dashboard/testimonials" className="font-medium">
-              Testimonials
-            </Link>
-            <Link href="/dashboard/widgets" className="text-gray-600 dark:text-gray-400">
-              Widgets
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <DashboardNav />
 
       {/* Main Content */}
       <main className="container mx-auto p-6">
@@ -129,10 +108,18 @@ export default function TestimonialsPage() {
               Manage and moderate customer testimonials
             </p>
           </div>
-          <Button onClick={exportTestimonials} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2">
+            <Link href="/dashboard/testimonials/new">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Testimonial
+              </Button>
+            </Link>
+            <Button onClick={exportTestimonials} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}

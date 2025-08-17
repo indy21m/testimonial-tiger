@@ -52,12 +52,37 @@ export const formRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Use default config if not provided
+      const defaultConfig = {
+        title: "We'd love your feedback!",
+        description: 'Share your experience with our product',
+        questions: [],
+        settings: {
+          requireName: true,
+          requireEmail: true,
+          allowImage: true,
+          allowVideo: false,
+          maxVideoLength: 60,
+          autoApprove: false,
+          sendEmailNotification: true,
+          successMessage: 'Thank you for your feedback!',
+        },
+        styling: {
+          theme: 'modern' as const,
+          primaryColor: '#3b82f6',
+          backgroundColor: '#FFFFFF',
+          fontFamily: 'Inter, sans-serif',
+          borderRadius: 'medium' as const,
+          showLogo: false,
+        },
+      }
+
       const form = await ctx.db
         .insert(forms)
         .values({
           userId: ctx.userId,
           name: input.name,
-          config: input.config,
+          config: input.config || defaultConfig,
         })
         .returning()
 

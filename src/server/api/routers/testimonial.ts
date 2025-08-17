@@ -10,6 +10,65 @@ import { TRPCError } from '@trpc/server'
 import { triggerWebhooks } from '@/server/utils/webhook'
 
 export const testimonialRouter = createTRPCRouter({
+  createManual: protectedProcedure
+    .input(
+      z.object({
+        formId: z.string().uuid(),
+        customerName: z.string().min(1),
+        customerEmail: z.string().email().optional(),
+        customerCompany: z.string().optional(),
+        customerPhoto: z.string().optional(),
+        content: z.string().min(1),
+        rating: z.number().min(1).max(5),
+        status: z.enum(['pending', 'approved', 'rejected']),
+        source: z.enum(['manual', 'form', 'api', 'import']).default('manual'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify form ownership
+      const form = await ctx.db.query.forms.findFirst({
+        where: and(
+          eq(forms.id, input.formId),
+          eq(forms.userId, ctx.userId)
+        ),
+      })
+
+      if (!form) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Form not found' })
+      }
+
+      const testimonial = await ctx.db
+        .insert(testimonials)
+        .values({
+          formId: input.formId,
+          customerName: input.customerName,
+          customerEmail: input.customerEmail,
+          customerCompany: input.customerCompany,
+          customerPhoto: input.customerPhoto,
+          content: input.content,
+          rating: input.rating,
+          status: input.status,
+          source: input.source,
+          approvedAt: input.status === 'approved' ? new Date() : null,
+        })
+        .returning()
+
+      // Update form stats
+      await ctx.db
+        .update(forms)
+        .set({
+          submissions: sql`${forms.submissions} + 1`,
+        })
+        .where(eq(forms.id, input.formId))
+
+      // Trigger webhook if approved
+      if (input.status === 'approved') {
+        triggerWebhooks(ctx.userId, 'approved', testimonial[0])
+      }
+
+      return testimonial[0]
+    }),
+
   submit: publicProcedure
     .input(
       z.object({

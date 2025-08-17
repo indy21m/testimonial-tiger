@@ -4,11 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
+import { DashboardNav } from '@/components/features/dashboard-nav'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Upload, Check, Loader2 } from 'lucide-react'
+import { Upload, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -148,22 +149,7 @@ export default function ImportPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/dashboard">
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
-            </Button>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🐅</span>
-              <span className="text-xl font-bold">Import from Senja</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DashboardNav />
 
       {/* Main Content */}
       <main className="container mx-auto max-w-4xl p-6">

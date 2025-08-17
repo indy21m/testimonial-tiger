@@ -44,14 +44,39 @@ export const widgetRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Use default config if not provided
+      const defaultConfig = {
+        display: {
+          showRating: true,
+          showDate: false,
+          showPhoto: true,
+          showCompany: true,
+        },
+        filters: {
+          onlyFeatured: false,
+          maxItems: 20,
+        },
+        styling: {
+          theme: 'light' as const,
+          layout: 'comfortable' as const,
+          primaryColor: '#3b82f6',
+          backgroundColor: '#FFFFFF',
+          textColor: '#374151',
+          borderColor: '#E5E7EB',
+          borderRadius: '0.5rem',
+          shadow: 'sm' as const,
+          fontFamily: 'Inter',
+        },
+      }
+
       const widget = await ctx.db
         .insert(widgets)
         .values({
           userId: ctx.userId,
           name: input.name,
           type: input.type,
-          config: input.config,
-          allowedDomains: input.allowedDomains,
+          config: input.config || defaultConfig,
+          allowedDomains: input.allowedDomains || [],
         })
         .returning()
 

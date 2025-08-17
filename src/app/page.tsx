@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -8,24 +9,40 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { auth } from '@clerk/nextjs/server'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { userId } = await auth()
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Navigation */}
       <nav className="border-b bg-white/80 backdrop-blur-sm dark:bg-gray-900/80">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🐅</span>
+            <Image
+              src="/tigerlogo.png"
+              alt="Testimonial Tiger"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
             <span className="text-xl font-bold">Testimonial Tiger</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/sign-in">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
-            <Link href="/sign-up">
-              <Button>Get Started</Button>
-            </Link>
+            {userId ? (
+              <Link href="/dashboard">
+                <Button>Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/sign-in">
+                  <Button variant="ghost">Sign In</Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button>Get Started</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
