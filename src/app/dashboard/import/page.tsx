@@ -84,17 +84,9 @@ export default function ImportPage() {
 
       const data = await response.json()
       
-      // Log the raw response to see the actual structure
-      console.log('Raw Senja API response:', JSON.stringify(data, null, 2))
-      
       // Map Senja data structure to our format
       // Try multiple possible field structures
       const testimonials: SenjaTestimonial[] = data.testimonials?.map((t: any) => {
-        // Log first testimonial structure to debug
-        if (data.testimonials.indexOf(t) === 0) {
-          console.log('First testimonial structure:', t)
-        }
-        
         return {
           id: t.id,
           type: t.type || 'text',

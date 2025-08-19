@@ -203,12 +203,16 @@ export const widgets = pgTable(
           showCompany: boolean
           maxLength?: number
           itemsPerPage?: number
+          truncateLength?: number
+          showReadMore?: boolean
         }
         filters: {
           formIds?: string[]
           onlyFeatured: boolean
           minRating?: number
           maxItems?: number
+          selectedTestimonialIds?: string[]
+          testimonialOrder?: string[]
         }
         styling: {
           theme: 'light' | 'dark' | 'custom'
@@ -221,6 +225,12 @@ export const widgets = pgTable(
           shadow: 'none' | 'sm' | 'md' | 'lg'
           fontFamily: string
           customCSS?: string
+          fallbackAvatar?: {
+            type: 'initials' | 'placeholder'
+            backgroundColor?: string
+            textColor?: string
+            placeholderUrl?: string
+          }
         }
       }>()
       .notNull()
@@ -230,6 +240,8 @@ export const widgets = pgTable(
           showDate: false,
           showPhoto: true,
           showCompany: true,
+          truncateLength: 200,
+          showReadMore: true,
         },
         filters: {
           onlyFeatured: false,
@@ -245,6 +257,11 @@ export const widgets = pgTable(
           borderRadius: '0.5rem',
           shadow: 'sm',
           fontFamily: 'Inter',
+          fallbackAvatar: {
+            type: 'initials',
+            backgroundColor: '#3b82f6',
+            textColor: '#FFFFFF',
+          },
         },
       })),
 

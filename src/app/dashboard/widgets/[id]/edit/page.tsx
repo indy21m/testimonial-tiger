@@ -12,11 +12,76 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Save, Monitor, Smartphone, Code, Eye } from 'lucide-react'
+import { ArrowLeft, Save, Monitor, Smartphone, Code, Eye, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { debounce } from 'lodash'
 import { WidgetPreview } from '@/components/features/widget-preview'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import {
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+// Sortable testimonial item component
+function SortableTestimonialItem({ testimonial, isSelected, onToggle }: {
+  testimonial: any
+  isSelected: boolean
+  onToggle: () => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: testimonial.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 border rounded-lg bg-white dark:bg-gray-800"
+    >
+      <div {...attributes} {...listeners} className="cursor-move">
+        <GripVertical className="w-4 h-4 text-gray-400" />
+      </div>
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={onToggle}
+      />
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm">{testimonial.customerName}</p>
+        <p className="text-xs text-gray-500 truncate">{testimonial.content}</p>
+      </div>
+      {testimonial.rating && (
+        <div className="text-xs text-yellow-500">
+          {testimonial.rating}★
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function WidgetEditorPage() {
   const params = useParams()
@@ -26,6 +91,8 @@ export default function WidgetEditorPage() {
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [activeTab, setActiveTab] = useState('display')
   const [embedCodeCopied, setEmbedCodeCopied] = useState(false)
+  const [selectedTestimonialIds, setSelectedTestimonialIds] = useState<string[]>([])
+  const [testimonialOrder, setTestimonialOrder] = useState<string[]>([])
 
   const { data: widget, refetch } = api.widget.get.useQuery({ id: widgetId })
   const { data: forms } = api.form.list.useQuery()
@@ -78,6 +145,91 @@ export default function WidgetEditorPage() {
     
     debouncedUpdate({ allowedDomains: domainList })
   }, [debouncedUpdate])
+
+  // Initialize selected testimonials and order from widget config
+  useMemo(() => {
+    if (widget?.config.filters.selectedTestimonialIds) {
+      setSelectedTestimonialIds(widget.config.filters.selectedTestimonialIds)
+    }
+    if (widget?.config.filters.testimonialOrder) {
+      setTestimonialOrder(widget.config.filters.testimonialOrder)
+    } else if (testimonials) {
+      // Initialize order with all testimonials if not set
+      setTestimonialOrder(testimonials.map(t => t.id))
+    }
+  }, [widget, testimonials])
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      setTestimonialOrder((items) => {
+        const oldIndex = items.indexOf(active.id as string)
+        const newIndex = items.indexOf(over.id as string)
+        const newOrder = arrayMove(items, oldIndex, newIndex)
+        
+        // Update widget config
+        debouncedUpdate({ 
+          config: {
+            ...widget!.config,
+            filters: {
+              ...widget!.config.filters,
+              testimonialOrder: newOrder
+            }
+          }
+        })
+        
+        return newOrder
+      })
+    }
+  }
+
+  const toggleTestimonial = (testimonialId: string) => {
+    setSelectedTestimonialIds(prev => {
+      const newIds = prev.includes(testimonialId)
+        ? prev.filter(id => id !== testimonialId)
+        : [...prev, testimonialId]
+      
+      // Update widget config
+      debouncedUpdate({ 
+        config: {
+          ...widget!.config,
+          filters: {
+            ...widget!.config.filters,
+            selectedTestimonialIds: newIds
+          }
+        }
+      })
+      
+      return newIds
+    })
+  }
+
+  const toggleAll = () => {
+    if (!testimonials) return
+    
+    const allSelected = selectedTestimonialIds.length === testimonials.length
+    const newIds = allSelected ? [] : testimonials.map(t => t.id)
+    
+    setSelectedTestimonialIds(newIds)
+    debouncedUpdate({ 
+      config: {
+        ...widget!.config,
+        filters: {
+          ...widget!.config.filters,
+          selectedTestimonialIds: newIds
+        }
+      }
+    })
+  }
 
   const copyEmbedCode = () => {
     const embedCode = `<!-- Testimonial Tiger Widget -->
@@ -135,11 +287,68 @@ export default function WidgetEditorPage() {
         <div className="w-96 border-r bg-white dark:bg-gray-800 overflow-y-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
             <TabsList className="w-full rounded-none border-b">
+              <TabsTrigger value="testimonials" className="flex-1">Testimonials</TabsTrigger>
               <TabsTrigger value="display" className="flex-1">Display</TabsTrigger>
               <TabsTrigger value="filters" className="flex-1">Filters</TabsTrigger>
               <TabsTrigger value="styling" className="flex-1">Styling</TabsTrigger>
               <TabsTrigger value="embed" className="flex-1">Embed</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="testimonials" className="p-6 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Select Testimonials</CardTitle>
+                  <CardDescription>Choose which testimonials to display and set their order</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-4 border-b">
+                      <Label>
+                        {selectedTestimonialIds.length} of {testimonials?.length || 0} selected
+                      </Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleAll}
+                      >
+                        {selectedTestimonialIds.length === testimonials?.length ? 'Deselect All' : 'Select All'}
+                      </Button>
+                    </div>
+                    
+                    {testimonials && testimonials.length > 0 ? (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={testimonialOrder}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {testimonialOrder
+                              .map(id => testimonials.find(t => t.id === id))
+                              .filter(Boolean)
+                              .map((testimonial) => (
+                                <SortableTestimonialItem
+                                  key={testimonial!.id}
+                                  testimonial={testimonial}
+                                  isSelected={selectedTestimonialIds.includes(testimonial!.id)}
+                                  onToggle={() => toggleTestimonial(testimonial!.id)}
+                                />
+                              ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center py-8">
+                        No testimonials available. Add testimonials to your forms first.
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="display" className="p-6 space-y-6">
               <Card>
@@ -186,6 +395,35 @@ export default function WidgetEditorPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Text Settings</CardTitle>
+                  <CardDescription>Configure text display options</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="truncate-length">Truncate Length</Label>
+                    <Input
+                      id="truncate-length"
+                      type="number"
+                      value={widget.config.display.truncateLength || 200}
+                      onChange={(e) => handleConfigUpdate(['display', 'truncateLength'], parseInt(e.target.value))}
+                      min="50"
+                      max="500"
+                    />
+                    <p className="text-xs text-gray-500">Number of characters before truncation</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-read-more">Show Read More Button</Label>
+                    <Switch
+                      id="show-read-more"
+                      checked={widget.config.display.showReadMore ?? true}
+                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showReadMore'], checked)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Legacy Text Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -431,6 +669,110 @@ export default function WidgetEditorPage() {
                       className="mt-2"
                     />
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fallback Avatar</CardTitle>
+                  <CardDescription>Display options when customer photo is not available</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Avatar Type</Label>
+                    <Select
+                      value={widget.config.styling.fallbackAvatar?.type || 'initials'}
+                      onValueChange={(value: 'initials' | 'placeholder') => 
+                        handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                          ...widget.config.styling.fallbackAvatar,
+                          type: value
+                        })
+                      }
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="initials">Customer Initials</SelectItem>
+                        <SelectItem value="placeholder">Placeholder Image</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {widget.config.styling.fallbackAvatar?.type === 'initials' && (
+                    <>
+                      <div>
+                        <Label>Background Color</Label>
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            type="color"
+                            value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
+                            onChange={(e) => 
+                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                ...widget.config.styling.fallbackAvatar,
+                                backgroundColor: e.target.value
+                              })
+                            }
+                            className="w-20"
+                          />
+                          <Input
+                            value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
+                            onChange={(e) => 
+                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                ...widget.config.styling.fallbackAvatar,
+                                backgroundColor: e.target.value
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Text Color</Label>
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            type="color"
+                            value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
+                            onChange={(e) => 
+                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                ...widget.config.styling.fallbackAvatar,
+                                textColor: e.target.value
+                              })
+                            }
+                            className="w-20"
+                          />
+                          <Input
+                            value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
+                            onChange={(e) => 
+                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                ...widget.config.styling.fallbackAvatar,
+                                textColor: e.target.value
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {widget.config.styling.fallbackAvatar?.type === 'placeholder' && (
+                    <div>
+                      <Label>Placeholder Image URL</Label>
+                      <Input
+                        value={widget.config.styling.fallbackAvatar?.placeholderUrl || ''}
+                        onChange={(e) => 
+                          handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                            ...widget.config.styling.fallbackAvatar,
+                            placeholderUrl: e.target.value
+                          })
+                        }
+                        placeholder="https://example.com/placeholder.png"
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Provide a URL to a placeholder image
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

@@ -36,29 +36,53 @@ export async function GET(
       }
     }
 
-    // Build filter conditions
-    const conditions = [eq(testimonials.status, 'approved')]
+    let widgetTestimonials = []
     
-    if (widget.config.filters.formIds && widget.config.filters.formIds.length > 0) {
-      conditions.push(inArray(testimonials.formId, widget.config.filters.formIds))
-    }
-    
-    if (widget.config.filters.onlyFeatured) {
-      conditions.push(eq(testimonials.featured, true))
-    }
-    
-    if (widget.config.filters.minRating) {
-      conditions.push(gte(testimonials.rating, widget.config.filters.minRating))
-    }
+    // Check if specific testimonials are selected
+    if (widget.config.filters.selectedTestimonialIds && widget.config.filters.selectedTestimonialIds.length > 0) {
+      // Fetch only selected testimonials
+      const selectedTestimonials = await db.query.testimonials.findMany({
+        where: and(
+          eq(testimonials.status, 'approved'),
+          inArray(testimonials.id, widget.config.filters.selectedTestimonialIds)
+        ),
+      })
+      
+      // Sort testimonials according to custom order if provided
+      if (widget.config.filters.testimonialOrder && widget.config.filters.testimonialOrder.length > 0) {
+        const orderMap = new Map(widget.config.filters.testimonialOrder.map((id, index) => [id, index]))
+        widgetTestimonials = selectedTestimonials.sort((a, b) => {
+          const orderA = orderMap.get(a.id) ?? 999
+          const orderB = orderMap.get(b.id) ?? 999
+          return orderA - orderB
+        })
+      } else {
+        widgetTestimonials = selectedTestimonials
+      }
+    } else {
+      // Fall back to filter-based selection
+      const conditions = [eq(testimonials.status, 'approved')]
+      
+      if (widget.config.filters.formIds && widget.config.filters.formIds.length > 0) {
+        conditions.push(inArray(testimonials.formId, widget.config.filters.formIds))
+      }
+      
+      if (widget.config.filters.onlyFeatured) {
+        conditions.push(eq(testimonials.featured, true))
+      }
+      
+      if (widget.config.filters.minRating) {
+        conditions.push(gte(testimonials.rating, widget.config.filters.minRating))
+      }
 
-    const limit = widget.config.filters.maxItems || 20
+      const limit = widget.config.filters.maxItems || 20
 
-    // Get testimonials
-    const widgetTestimonials = await db.query.testimonials.findMany({
-      where: and(...conditions),
-      orderBy: [desc(testimonials.submittedAt)],
-      limit,
-    })
+      widgetTestimonials = await db.query.testimonials.findMany({
+        where: and(...conditions),
+        orderBy: [desc(testimonials.submittedAt)],
+        limit,
+      })
+    }
 
     // Track impression (non-blocking)
     db.update(widgets)
@@ -345,12 +369,61 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
 }
 
 function renderTestimonial(testimonial: any, config: any): string {
-  const content = config.display.maxLength && testimonial.content.length > config.display.maxLength
-    ? testimonial.content.slice(0, config.display.maxLength) + '...'
+  const truncateLength = config.display.truncateLength || 200
+  const showReadMore = config.display.showReadMore !== false
+  const needsTruncation = testimonial.content.length > truncateLength
+  const testimonialId = `tt-testimonial-${testimonial.id}`
+  
+  const truncatedContent = needsTruncation
+    ? testimonial.content.slice(0, truncateLength) + '...'
     : testimonial.content
+  
+  // Generate initials for fallback avatar
+  const getInitials = (name: string) => {
+    const parts = name.split(' ')
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[parts.length - 1][0]
+    }
+    return name.slice(0, 2).toUpperCase()
+  }
+  
+  const fallbackAvatarStyle = config.styling.fallbackAvatar || {
+    type: 'initials',
+    backgroundColor: '#3b82f6',
+    textColor: '#FFFFFF'
+  }
+  
+  const renderAvatar = () => {
+    if (testimonial.customerPhoto) {
+      return `<img src="${escapeHtml(testimonial.customerPhoto)}" alt="${escapeHtml(testimonial.customerName)}" />`
+    }
+    
+    if (fallbackAvatarStyle.type === 'placeholder' && fallbackAvatarStyle.placeholderUrl) {
+      return `<img src="${escapeHtml(fallbackAvatarStyle.placeholderUrl)}" alt="${escapeHtml(testimonial.customerName)}" />`
+    }
+    
+    // Default to initials
+    const initials = getInitials(testimonial.customerName)
+    return `
+      <div style="
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: ${fallbackAvatarStyle.backgroundColor || '#3b82f6'};
+        color: ${fallbackAvatarStyle.textColor || '#FFFFFF'};
+        font-weight: 600;
+        font-size: 16px;
+        border-radius: 50%;
+      ">
+        ${initials}
+      </div>
+    `
+  }
 
   return `
-    <div class="tt-testimonial">
+    <div class="tt-testimonial" data-testimonial-id="${testimonialId}">
       ${config.display.showRating && testimonial.rating ? `
         <div class="tt-rating">
           ${[1,2,3,4,5].map(i => `
@@ -361,17 +434,52 @@ function renderTestimonial(testimonial: any, config: any): string {
         </div>
       ` : ''}
       
-      <div class="tt-content">${escapeHtml(content)}</div>
+      <div class="tt-content">
+        <span class="tt-content-text">${escapeHtml(truncatedContent)}</span>
+        ${needsTruncation ? `
+          <span class="tt-content-full" style="display: none;">${escapeHtml(testimonial.content)}</span>
+          ${showReadMore ? `
+            <button class="tt-read-more" style="
+              background: none;
+              border: none;
+              color: ${config.styling.primaryColor};
+              cursor: pointer;
+              font-size: inherit;
+              padding: 0;
+              margin-left: 4px;
+              text-decoration: underline;
+            " onclick="
+              var testimonial = this.closest('[data-testimonial-id]');
+              var textEl = testimonial.querySelector('.tt-content-text');
+              var fullEl = testimonial.querySelector('.tt-content-full');
+              if (fullEl.style.display === 'none') {
+                textEl.style.display = 'none';
+                fullEl.style.display = 'inline';
+                this.textContent = 'Read Less';
+              } else {
+                textEl.style.display = 'inline';
+                fullEl.style.display = 'none';
+                this.textContent = 'Read More';
+              }
+            ">Read More</button>
+          ` : ''}
+        ` : ''}
+      </div>
+      
+      ${config.display.showDate && testimonial.submittedAt ? `
+        <div class="tt-date" style="
+          font-size: 12px;
+          opacity: 0.6;
+          margin-top: 8px;
+        ">
+          ${new Date(testimonial.submittedAt).toLocaleDateString()}
+        </div>
+      ` : ''}
       
       <div class="tt-customer">
         ${config.display.showPhoto ? `
           <div class="tt-avatar">
-            ${testimonial.customerPhoto 
-              ? `<img src="${escapeHtml(testimonial.customerPhoto)}" alt="${escapeHtml(testimonial.customerName)}" />`
-              : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>`
-            }
+            ${renderAvatar()}
           </div>
         ` : ''}
         
