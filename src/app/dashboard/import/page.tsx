@@ -88,23 +88,35 @@ export default function ImportPage() {
       console.log('Raw Senja API response:', JSON.stringify(data, null, 2))
       
       // Map Senja data structure to our format
-      // Based on Senja API docs, fields are at root level with underscore naming
-      const testimonials: SenjaTestimonial[] = data.testimonials?.map((t: any) => ({
-        id: t.id,
-        type: t.type || 'text',
-        text: t.text || '',
-        rating: t.rating || 5,
-        customerName: t.customer_name || t.customerName || 'Anonymous',
-        customerEmail: t.customer_email || t.customerEmail,
-        customerAvatar: t.customer_avatar || t.customerAvatar,
-        customerCompany: t.customer_company || t.customerCompany,
-        customerTagline: t.customer_tagline || t.customerTagline,
-        date: t.date || t.created_at || new Date().toISOString(),
-        approved: t.approved !== false,
-        videoUrl: t.video_url || t.videoUrl,
-        url: t.url,
-        tags: t.tags || [],
-      })) || []
+      // Try multiple possible field structures
+      const testimonials: SenjaTestimonial[] = data.testimonials?.map((t: any) => {
+        // Log first testimonial structure to debug
+        if (data.testimonials.indexOf(t) === 0) {
+          console.log('First testimonial structure:', t)
+        }
+        
+        return {
+          id: t.id,
+          type: t.type || 'text',
+          text: t.text || '',
+          rating: t.rating || 5,
+          // Try all possible name field locations
+          customerName: t.customer_name || t.customerName || t.name || t.customer?.name || 'Anonymous',
+          // Try all possible email field locations  
+          customerEmail: t.customer_email || t.customerEmail || t.email || t.customer?.email,
+          // Try all possible avatar field locations
+          customerAvatar: t.customer_avatar || t.customerAvatar || t.avatar || t.customer?.avatar,
+          // Try all possible company field locations
+          customerCompany: t.customer_company || t.customerCompany || t.company || t.customer?.company,
+          // Try all possible tagline field locations
+          customerTagline: t.customer_tagline || t.customerTagline || t.tagline || t.customer?.tagline,
+          date: t.date || t.created_at || new Date().toISOString(),
+          approved: t.approved !== false,
+          videoUrl: t.video_url || t.videoUrl || t.video?.url,
+          url: t.url,
+          tags: t.tags || [],
+        }
+      }) || []
 
       setSenjaTestimonials(testimonials)
       toast.success(`Found ${testimonials.length} testimonials from Senja`)
