@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/trpc/client'
@@ -96,11 +96,15 @@ export default function WidgetEditorPage() {
 
   const { data: widget, refetch } = api.widget.get.useQuery({ id: widgetId })
   const { data: forms } = api.form.list.useQuery()
-  const { data: testimonials } = api.widget.getTestimonials.useQuery({ widgetId })
+  const { data: testimonials, refetch: refetchTestimonials } = api.widget.getTestimonials.useQuery({ widgetId })
+  const utils = api.useUtils()
 
   const updateMutation = api.widget.update.useMutation({
-    onSuccess: () => {
-      refetch()
+    onSuccess: async () => {
+      await refetch()
+      await refetchTestimonials()
+      // Also invalidate the query to ensure fresh data
+      await utils.widget.getTestimonials.invalidate({ widgetId })
       toast.success('Widget settings saved')
     },
     onError: () => {
@@ -147,7 +151,7 @@ export default function WidgetEditorPage() {
   }, [debouncedUpdate])
 
   // Initialize selected testimonials and order from widget config
-  useMemo(() => {
+  useEffect(() => {
     if (widget?.config.filters.selectedTestimonialIds) {
       setSelectedTestimonialIds(widget.config.filters.selectedTestimonialIds)
     }
@@ -176,12 +180,13 @@ export default function WidgetEditorPage() {
         const newIndex = items.indexOf(over.id as string)
         const newOrder = arrayMove(items, oldIndex, newIndex)
         
-        // Update widget config
+        // Update widget config, preserving selectedTestimonialIds
         debouncedUpdate({ 
           config: {
             ...widget!.config,
             filters: {
               ...widget!.config.filters,
+              selectedTestimonialIds: selectedTestimonialIds,
               testimonialOrder: newOrder
             }
           }
@@ -204,13 +209,19 @@ export default function WidgetEditorPage() {
           ...widget!.config,
           filters: {
             ...widget!.config.filters,
-            selectedTestimonialIds: newIds
+            selectedTestimonialIds: newIds,
+            testimonialOrder: testimonialOrder
           }
         }
       })
       
       return newIds
     })
+    
+    // Add to order if not present
+    if (!testimonialOrder.includes(testimonialId)) {
+      setTestimonialOrder(prev => [...prev, testimonialId])
+    }
   }
 
   const toggleAll = () => {
@@ -220,12 +231,21 @@ export default function WidgetEditorPage() {
     const newIds = allSelected ? [] : testimonials.map(t => t.id)
     
     setSelectedTestimonialIds(newIds)
+    
+    // Update order to include all testimonials if selecting all
+    if (!allSelected) {
+      const currentOrder = testimonialOrder
+      const missingIds = newIds.filter(id => !currentOrder.includes(id))
+      setTestimonialOrder([...currentOrder, ...missingIds])
+    }
+    
     debouncedUpdate({ 
       config: {
         ...widget!.config,
         filters: {
           ...widget!.config.filters,
-          selectedTestimonialIds: newIds
+          selectedTestimonialIds: newIds,
+          testimonialOrder: allSelected ? testimonialOrder : [...testimonialOrder, ...newIds.filter(id => !testimonialOrder.includes(id))]
         }
       }
     })
@@ -837,10 +857,47 @@ subdomain.example.com"
                 <h3 className="text-lg font-semibold">Live Preview</h3>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Eye className="w-4 h-4" />
-                  {testimonials?.length || 0} testimonials
+                  {selectedTestimonialIds.length > 0 
+                    ? `${selectedTestimonialIds.length} selected`
+                    : `${testimonials?.length || 0} testimonials`}
                 </div>
               </div>
-              <WidgetPreview widget={widget} testimonials={testimonials || []} />
+              <WidgetPreview 
+                widget={{
+                  ...widget,
+                  config: {
+                    ...widget.config,
+                    filters: {
+                      ...widget.config.filters,
+                      selectedTestimonialIds: selectedTestimonialIds,
+                      testimonialOrder: testimonialOrder
+                    }
+                  }
+                }} 
+                testimonials={(() => {
+                  if (!testimonials) return []
+                  
+                  // Filter testimonials based on current UI selection
+                  let filtered = testimonials
+                  if (selectedTestimonialIds.length > 0) {
+                    filtered = testimonials.filter(t => selectedTestimonialIds.includes(t.id))
+                  }
+                  
+                  // Apply custom order
+                  if (testimonialOrder.length > 0) {
+                    const orderMap = new Map(
+                      testimonialOrder.map((id, index) => [id, index])
+                    )
+                    filtered = filtered.sort((a, b) => {
+                      const orderA = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER
+                      const orderB = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER
+                      return orderA - orderB
+                    })
+                  }
+                  
+                  return filtered
+                })()} 
+              />
             </div>
           </div>
         </div>
