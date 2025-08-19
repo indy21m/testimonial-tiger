@@ -22,8 +22,13 @@ interface SenjaTestimonial {
   customerName?: string
   customerEmail?: string
   customerAvatar?: string
+  customerCompany?: string
+  customerTagline?: string
   date: string
   approved: boolean
+  videoUrl?: string
+  url?: string
+  tags?: string[]
 }
 
 export default function ImportPage() {
@@ -79,17 +84,26 @@ export default function ImportPage() {
 
       const data = await response.json()
       
+      // Log the raw response to see the actual structure
+      console.log('Raw Senja API response:', JSON.stringify(data, null, 2))
+      
       // Map Senja data structure to our format
+      // Based on Senja API docs, fields are at root level with underscore naming
       const testimonials: SenjaTestimonial[] = data.testimonials?.map((t: any) => ({
         id: t.id,
         type: t.type || 'text',
-        text: t.text || t.content || '',
-        rating: t.rating,
-        customerName: t.customer?.name || t.name,
-        customerEmail: t.customer?.email || t.email,
-        customerAvatar: t.customer?.avatar || t.avatar,
-        date: t.date || t.created_at,
+        text: t.text || '',
+        rating: t.rating || 5,
+        customerName: t.customer_name || t.customerName || 'Anonymous',
+        customerEmail: t.customer_email || t.customerEmail,
+        customerAvatar: t.customer_avatar || t.customerAvatar,
+        customerCompany: t.customer_company || t.customerCompany,
+        customerTagline: t.customer_tagline || t.customerTagline,
+        date: t.date || t.created_at || new Date().toISOString(),
         approved: t.approved !== false,
+        videoUrl: t.video_url || t.videoUrl,
+        url: t.url,
+        tags: t.tags || [],
       })) || []
 
       setSenjaTestimonials(testimonials)
@@ -119,13 +133,20 @@ export default function ImportPage() {
       customerName: t.customerName || 'Anonymous',
       customerEmail: t.customerEmail,
       customerPhoto: t.customerAvatar,
+      customerCompany: t.customerCompany,
       content: t.text,
       rating: t.rating || 5,
+      videoUrl: t.videoUrl,
       status: t.approved ? 'approved' as const : 'pending' as const,
       source: 'import' as const,
+      submittedAt: new Date(t.date),
       metadata: {
         senjaId: t.id,
         importedAt: new Date().toISOString(),
+        sourceUrl: t.url,
+        tags: t.tags,
+        customerTagline: t.customerTagline,
+        type: t.type,
       },
     }))
 
@@ -272,6 +293,11 @@ export default function ImportPage() {
                             <p className="font-medium text-sm">
                               {testimonial.customerName || 'Anonymous'}
                             </p>
+                            {testimonial.customerCompany && (
+                              <p className="text-xs text-gray-600">
+                                {testimonial.customerCompany}
+                              </p>
+                            )}
                             {testimonial.customerEmail && (
                               <p className="text-xs text-gray-500">
                                 {testimonial.customerEmail}
@@ -285,6 +311,9 @@ export default function ImportPage() {
                               {testimonial.rating}★
                             </Badge>
                           )}
+                          {testimonial.type === 'video' && (
+                            <Badge variant="outline">Video</Badge>
+                          )}
                           <Badge variant={testimonial.approved ? 'default' : 'secondary'}>
                             {testimonial.approved ? 'Approved' : 'Pending'}
                           </Badge>
@@ -292,6 +321,9 @@ export default function ImportPage() {
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                         {testimonial.text}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(testimonial.date).toLocaleDateString()}
                       </p>
                     </div>
                   ))}

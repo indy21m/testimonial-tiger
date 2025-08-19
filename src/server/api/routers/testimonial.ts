@@ -325,8 +325,10 @@ export const testimonialRouter = createTRPCRouter({
             customerPhoto: z.string().optional(),
             content: z.string(),
             rating: z.number().min(1).max(5),
+            videoUrl: z.string().optional(),
             status: z.enum(['pending', 'approved', 'rejected']),
             source: z.enum(['form', 'api', 'import']),
+            submittedAt: z.date().optional(),
             metadata: z.any().optional(),
           })
         ),
@@ -380,7 +382,7 @@ export const testimonialRouter = createTRPCRouter({
         testimonialsToInsert.push({
           formId: input.formId,
           ...testimonial,
-          submittedAt: new Date(),
+          submittedAt: testimonial.submittedAt || new Date(),
           approvedAt: testimonial.status === 'approved' ? new Date() : null,
         })
       }
