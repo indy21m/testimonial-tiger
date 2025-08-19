@@ -160,6 +160,47 @@ export const widgetRouter = createTRPCRouter({
       return deleted[0]
     }),
 
+  // Get ALL available testimonials for widget selection (no filters)
+  getAllTestimonials: protectedProcedure
+    .input(z.object({ widgetId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const widget = await ctx.db.query.widgets.findFirst({
+        where: and(
+          eq(widgets.id, input.widgetId),
+          eq(widgets.userId, ctx.userId)
+        ),
+      })
+
+      if (!widget) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Widget not found',
+        })
+      }
+
+      // Get ALL approved testimonials (no filtering by selection)
+      const conditions = [eq(testimonials.status, 'approved')]
+      
+      // Only apply form filter if specified
+      if (widget.config.filters.formIds && widget.config.filters.formIds.length > 0) {
+        conditions.push(inArray(testimonials.formId, widget.config.filters.formIds))
+      }
+
+      const allTestimonials = await ctx.db.query.testimonials.findMany({
+        where: and(...conditions),
+        orderBy: [desc(testimonials.submittedAt)],
+        with: {
+          form: {
+            columns: {
+              name: true,
+            },
+          },
+        },
+      })
+
+      return allTestimonials
+    }),
+
   // Get testimonials for a widget (for preview)
   getTestimonials: protectedProcedure
     .input(z.object({ widgetId: z.string() }))

@@ -96,14 +96,17 @@ export default function WidgetEditorPage() {
 
   const { data: widget, refetch } = api.widget.get.useQuery({ id: widgetId })
   const { data: forms } = api.form.list.useQuery()
-  const { data: testimonials, refetch: refetchTestimonials } = api.widget.getTestimonials.useQuery({ widgetId })
+  const { data: allTestimonials, refetch: refetchAllTestimonials } = api.widget.getAllTestimonials.useQuery({ widgetId })
+  const { refetch: refetchFilteredTestimonials } = api.widget.getTestimonials.useQuery({ widgetId })
   const utils = api.useUtils()
 
   const updateMutation = api.widget.update.useMutation({
     onSuccess: async () => {
       await refetch()
-      await refetchTestimonials()
-      // Also invalidate the query to ensure fresh data
+      await refetchAllTestimonials()
+      await refetchFilteredTestimonials()
+      // Also invalidate the queries to ensure fresh data
+      await utils.widget.getAllTestimonials.invalidate({ widgetId })
       await utils.widget.getTestimonials.invalidate({ widgetId })
       toast.success('Widget settings saved')
     },
@@ -157,11 +160,11 @@ export default function WidgetEditorPage() {
     }
     if (widget?.config.filters.testimonialOrder) {
       setTestimonialOrder(widget.config.filters.testimonialOrder)
-    } else if (testimonials) {
+    } else if (allTestimonials) {
       // Initialize order with all testimonials if not set
-      setTestimonialOrder(testimonials.map(t => t.id))
+      setTestimonialOrder(allTestimonials.map(t => t.id))
     }
-  }, [widget, testimonials])
+  }, [widget, allTestimonials])
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -225,10 +228,10 @@ export default function WidgetEditorPage() {
   }
 
   const toggleAll = () => {
-    if (!testimonials) return
+    if (!allTestimonials) return
     
-    const allSelected = selectedTestimonialIds.length === testimonials.length
-    const newIds = allSelected ? [] : testimonials.map(t => t.id)
+    const allSelected = selectedTestimonialIds.length === allTestimonials.length
+    const newIds = allSelected ? [] : allTestimonials.map(t => t.id)
     
     setSelectedTestimonialIds(newIds)
     
@@ -324,18 +327,18 @@ export default function WidgetEditorPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between pb-4 border-b">
                       <Label>
-                        {selectedTestimonialIds.length} of {testimonials?.length || 0} selected
+                        {selectedTestimonialIds.length} of {allTestimonials?.length || 0} selected
                       </Label>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={toggleAll}
                       >
-                        {selectedTestimonialIds.length === testimonials?.length ? 'Deselect All' : 'Select All'}
+                        {selectedTestimonialIds.length === allTestimonials?.length ? 'Deselect All' : 'Select All'}
                       </Button>
                     </div>
                     
-                    {testimonials && testimonials.length > 0 ? (
+                    {allTestimonials && allTestimonials.length > 0 ? (
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
@@ -347,7 +350,7 @@ export default function WidgetEditorPage() {
                         >
                           <div className="space-y-2 max-h-96 overflow-y-auto">
                             {testimonialOrder
-                              .map(id => testimonials.find(t => t.id === id))
+                              .map(id => allTestimonials.find(t => t.id === id))
                               .filter(Boolean)
                               .map((testimonial) => (
                                 <SortableTestimonialItem
@@ -859,7 +862,7 @@ subdomain.example.com"
                   <Eye className="w-4 h-4" />
                   {selectedTestimonialIds.length > 0 
                     ? `${selectedTestimonialIds.length} selected`
-                    : `${testimonials?.length || 0} testimonials`}
+                    : `${allTestimonials?.length || 0} testimonials`}
                 </div>
               </div>
               <WidgetPreview 
@@ -875,12 +878,12 @@ subdomain.example.com"
                   }
                 }} 
                 testimonials={(() => {
-                  if (!testimonials) return []
+                  if (!allTestimonials) return []
                   
                   // Filter testimonials based on current UI selection
-                  let filtered = testimonials
+                  let filtered = allTestimonials
                   if (selectedTestimonialIds.length > 0) {
-                    filtered = testimonials.filter(t => selectedTestimonialIds.includes(t.id))
+                    filtered = allTestimonials.filter(t => selectedTestimonialIds.includes(t.id))
                   }
                   
                   // Apply custom order
