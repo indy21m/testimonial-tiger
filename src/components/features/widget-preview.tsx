@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Widget, Testimonial } from '@/server/db/schema'
-import { Star, ChevronLeft, ChevronRight, User } from 'lucide-react'
+import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 
@@ -37,6 +37,58 @@ export function WidgetPreview({ widget, testimonials }: WidgetPreviewProps) {
     compact: 'p-3',
     comfortable: 'p-4',
     spacious: 'p-6',
+  }
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ')
+    if (parts.length === 1) {
+      return parts[0]?.substring(0, 2).toUpperCase() || ''
+    }
+    const firstInitial = parts[0]?.[0] || ''
+    const lastInitial = parts[parts.length - 1]?.[0] || ''
+    return (firstInitial + lastInitial).toUpperCase()
+  }
+
+  const renderAvatar = (testimonial: Testimonial) => {
+    if (testimonial.customerPhoto) {
+      return (
+        <img
+          src={testimonial.customerPhoto}
+          alt={testimonial.customerName}
+          className="w-10 h-10 rounded-full object-cover"
+        />
+      )
+    }
+
+    // Use fallback avatar configuration
+    const fallbackConfig = config.styling.fallbackAvatar || {
+      type: 'initials',
+      backgroundColor: '#3b82f6',
+      textColor: '#FFFFFF',
+    }
+
+    if (fallbackConfig.type === 'placeholder' && fallbackConfig.placeholderUrl) {
+      return (
+        <img
+          src={fallbackConfig.placeholderUrl}
+          alt={testimonial.customerName}
+          className="w-10 h-10 rounded-full object-cover"
+        />
+      )
+    }
+
+    // Default to initials
+    return (
+      <div 
+        className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
+        style={{
+          backgroundColor: fallbackConfig.backgroundColor || '#3b82f6',
+          color: fallbackConfig.textColor || '#FFFFFF',
+        }}
+      >
+        {getInitials(testimonial.customerName)}
+      </div>
+    )
   }
 
   const renderTestimonialCard = (testimonial: Testimonial, index?: number) => {
@@ -84,17 +136,7 @@ export function WidgetPreview({ widget, testimonials }: WidgetPreviewProps) {
         <div className="flex items-center gap-3">
           {config.display.showPhoto && (
             <div className="flex-shrink-0">
-              {testimonial.customerPhoto ? (
-                <img
-                  src={testimonial.customerPhoto}
-                  alt={testimonial.customerName}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <User className="w-5 h-5 text-gray-500" />
-                </div>
-              )}
+              {renderAvatar(testimonial)}
             </div>
           )}
           <div className="flex-1 min-w-0">

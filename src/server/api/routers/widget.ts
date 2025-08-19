@@ -18,6 +18,8 @@ const widgetConfigSchema = z.object({
     onlyFeatured: z.boolean(),
     minRating: z.number().optional(),
     maxItems: z.number().optional(),
+    selectedTestimonialIds: z.array(z.string()).optional(),
+    testimonialOrder: z.array(z.string()).optional(),
   }),
   styling: z.object({
     theme: z.enum(['light', 'dark', 'custom']),
@@ -30,6 +32,12 @@ const widgetConfigSchema = z.object({
     shadow: z.enum(['none', 'sm', 'md', 'lg']),
     fontFamily: z.string(),
     customCSS: z.string().optional(),
+    fallbackAvatar: z.object({
+      type: z.enum(['initials', 'placeholder']),
+      backgroundColor: z.string().optional(),
+      textColor: z.string().optional(),
+      placeholderUrl: z.string().optional(),
+    }).optional(),
   }),
 })
 
@@ -173,21 +181,28 @@ export const widgetRouter = createTRPCRouter({
       // Build filter conditions
       const conditions = [eq(testimonials.status, 'approved')]
       
-      if (widget.config.filters.formIds && widget.config.filters.formIds.length > 0) {
-        conditions.push(inArray(testimonials.formId, widget.config.filters.formIds))
-      }
-      
-      if (widget.config.filters.onlyFeatured) {
-        conditions.push(eq(testimonials.featured, true))
-      }
-      
-      if (widget.config.filters.minRating) {
-        conditions.push(gte(testimonials.rating, widget.config.filters.minRating))
+      // If specific testimonials are selected, only fetch those
+      if (widget.config.filters.selectedTestimonialIds && 
+          widget.config.filters.selectedTestimonialIds.length > 0) {
+        conditions.push(inArray(testimonials.id, widget.config.filters.selectedTestimonialIds))
+      } else {
+        // Apply other filters only if no specific testimonials are selected
+        if (widget.config.filters.formIds && widget.config.filters.formIds.length > 0) {
+          conditions.push(inArray(testimonials.formId, widget.config.filters.formIds))
+        }
+        
+        if (widget.config.filters.onlyFeatured) {
+          conditions.push(eq(testimonials.featured, true))
+        }
+        
+        if (widget.config.filters.minRating) {
+          conditions.push(gte(testimonials.rating, widget.config.filters.minRating))
+        }
       }
 
       const limit = widget.config.filters.maxItems || 20
 
-      const widgetTestimonials = await ctx.db.query.testimonials.findMany({
+      let widgetTestimonials = await ctx.db.query.testimonials.findMany({
         where: and(...conditions),
         orderBy: [desc(testimonials.submittedAt)],
         limit,
@@ -199,6 +214,20 @@ export const widgetRouter = createTRPCRouter({
           },
         },
       })
+
+      // Apply custom order if specified
+      if (widget.config.filters.testimonialOrder && 
+          widget.config.filters.testimonialOrder.length > 0) {
+        const orderMap = new Map(
+          widget.config.filters.testimonialOrder.map((id, index) => [id, index])
+        )
+        
+        widgetTestimonials = widgetTestimonials.sort((a, b) => {
+          const orderA = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER
+          const orderB = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER
+          return orderA - orderB
+        })
+      }
 
       return widgetTestimonials
     }),
