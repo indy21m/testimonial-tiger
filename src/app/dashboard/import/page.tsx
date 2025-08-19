@@ -68,7 +68,7 @@ export default function ImportPage() {
     try {
       const response = await fetch('https://api.senja.io/v1/testimonials', {
         headers: {
-          'Authorization': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       })
