@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/trpc/client'
@@ -12,12 +12,15 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Save, Monitor, Smartphone, Code, Eye, GripVertical } from 'lucide-react'
+import { ArrowLeft, Save, Monitor, Smartphone, Eye, GripVertical, Upload, Check, X, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { debounce } from 'lodash'
 import { WidgetPreview } from '@/components/features/widget-preview'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { upload } from '@vercel/blob/client'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
 import {
   DndContext,
   closestCenter,
@@ -89,10 +92,16 @@ export default function WidgetEditorPage() {
   const widgetId = params.id as string
   
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
-  const [activeTab, setActiveTab] = useState('display')
+  const [activeTab, setActiveTab] = useState('testimonials')
   const [embedCodeCopied, setEmbedCodeCopied] = useState(false)
   const [selectedTestimonialIds, setSelectedTestimonialIds] = useState<string[]>([])
   const [testimonialOrder, setTestimonialOrder] = useState<string[]>([])
+  const [truncateLength, setTruncateLength] = useState(200)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false)
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: widget, refetch } = api.widget.get.useQuery({ id: widgetId })
   const { data: forms } = api.form.list.useQuery()
@@ -118,12 +127,14 @@ export default function WidgetEditorPage() {
   // Debounced update for smooth editing experience
   const debouncedUpdate = useMemo(
     () => debounce((updates: any) => {
+      setIsSaving(true)
       updateMutation.mutate({ id: widgetId, ...updates })
+      setTimeout(() => setIsSaving(false), 1000)
     }, 500),
     [widgetId]
   )
 
-  const handleConfigUpdate = useCallback((path: string[], value: any) => {
+  const handleConfigUpdate = useCallback((path: string[], value: any, immediate: boolean = false) => {
     if (!widget) return
 
     const newConfig = { ...widget.config }
@@ -141,8 +152,14 @@ export default function WidgetEditorPage() {
       current[lastKey] = value
     }
 
-    debouncedUpdate({ config: newConfig })
-  }, [widget, debouncedUpdate])
+    if (immediate) {
+      setIsSaving(true)
+      updateMutation.mutate({ id: widgetId, config: newConfig })
+      setTimeout(() => setIsSaving(false), 1000)
+    } else {
+      debouncedUpdate({ config: newConfig })
+    }
+  }, [widget, debouncedUpdate, widgetId])
 
   const handleDomainsUpdate = useCallback((domains: string) => {
     const domainList = domains
@@ -164,7 +181,29 @@ export default function WidgetEditorPage() {
       // Initialize order with all testimonials if not set
       setTestimonialOrder(allTestimonials.map(t => t.id))
     }
+    // Initialize truncate length
+    if (widget?.config.display.truncateLength) {
+      setTruncateLength(widget.config.display.truncateLength)
+    }
   }, [widget, allTestimonials])
+
+  // Keyboard shortcuts for panel collapse
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === '[') {
+          e.preventDefault()
+          setLeftPanelCollapsed(prev => !prev)
+        } else if (e.key === ']') {
+          e.preventDefault()
+          setRightPanelCollapsed(prev => !prev)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [])
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -266,6 +305,48 @@ export default function WidgetEditorPage() {
     setTimeout(() => setEmbedCodeCopied(false), 2000)
   }
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file')
+      return
+    }
+
+    // Validate file size (max 4MB)
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('Image must be less than 4MB')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    try {
+      const blob = await upload(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/upload/avatar',
+      })
+
+      // Update widget config with uploaded avatar URL
+      handleConfigUpdate(['styling', 'fallbackAvatar'], {
+        ...widget!.config.styling.fallbackAvatar,
+        type: 'placeholder',
+        placeholderUrl: blob.url
+      }, true)
+
+      toast.success('Avatar uploaded successfully')
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Failed to upload avatar')
+    } finally {
+      setIsUploadingAvatar(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
   if (!widget) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -292,10 +373,10 @@ export default function WidgetEditorPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => setPreviewDevice('desktop')}>
-              <Monitor className={`w-4 h-4 ${previewDevice === 'desktop' ? 'text-primary' : ''}`} />
+              <Monitor className={cn("w-4 h-4", previewDevice === 'desktop' && "text-primary")} />
             </Button>
             <Button variant="outline" size="icon" onClick={() => setPreviewDevice('mobile')}>
-              <Smartphone className={`w-4 h-4 ${previewDevice === 'mobile' ? 'text-primary' : ''}`} />
+              <Smartphone className={cn("w-4 h-4", previewDevice === 'mobile' && "text-primary")} />
             </Button>
             <Button onClick={() => router.push('/dashboard/widgets')}>
               <Save className="w-4 h-4 mr-2" />
@@ -305,564 +386,545 @@ export default function WidgetEditorPage() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Settings Panel */}
-        <div className="w-96 border-r bg-white dark:bg-gray-800 overflow-y-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <TabsList className="w-full rounded-none border-b">
-              <TabsTrigger value="testimonials" className="flex-1">Testimonials</TabsTrigger>
-              <TabsTrigger value="display" className="flex-1">Display</TabsTrigger>
-              <TabsTrigger value="filters" className="flex-1">Filters</TabsTrigger>
-              <TabsTrigger value="styling" className="flex-1">Styling</TabsTrigger>
-              <TabsTrigger value="embed" className="flex-1">Embed</TabsTrigger>
-            </TabsList>
+      <div className="flex h-[calc(100vh-4rem)] relative">
+        {/* Left Panel - Settings */}
+        <AnimatePresence initial={false}>
+          {!leftPanelCollapsed && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: '400px', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="relative border-r bg-white dark:bg-gray-800 overflow-hidden"
+            >
+              <div className="h-full overflow-y-auto">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+                  <TabsList className="w-full rounded-none border-b grid grid-cols-3">
+                    <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+                    <TabsTrigger value="display">Display</TabsTrigger>
+                    <TabsTrigger value="styling">Styling</TabsTrigger>
+                  </TabsList>
 
-            <TabsContent value="testimonials" className="p-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select Testimonials</CardTitle>
-                  <CardDescription>Choose which testimonials to display and set their order</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between pb-4 border-b">
-                      <Label>
-                        {selectedTestimonialIds.length} of {allTestimonials?.length || 0} selected
-                      </Label>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleAll}
-                      >
-                        {selectedTestimonialIds.length === allTestimonials?.length ? 'Deselect All' : 'Select All'}
-                      </Button>
-                    </div>
-                    
-                    {allTestimonials && allTestimonials.length > 0 ? (
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <SortableContext
-                          items={testimonialOrder}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {testimonialOrder
-                              .map(id => allTestimonials.find(t => t.id === id))
-                              .filter(Boolean)
-                              .map((testimonial) => (
-                                <SortableTestimonialItem
-                                  key={testimonial!.id}
-                                  testimonial={testimonial}
-                                  isSelected={selectedTestimonialIds.includes(testimonial!.id)}
-                                  onToggle={() => toggleTestimonial(testimonial!.id)}
-                                />
-                              ))}
+                  <TabsContent value="testimonials" className="p-6 space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Select Testimonials</CardTitle>
+                        <CardDescription>Choose which testimonials to display and set their order</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between pb-4 border-b">
+                            <Label className="text-sm font-medium">
+                              {selectedTestimonialIds.length} of {allTestimonials?.length || 0} selected
+                            </Label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={toggleAll}
+                            >
+                              {selectedTestimonialIds.length === allTestimonials?.length ? 'Deselect All' : 'Select All'}
+                            </Button>
                           </div>
-                        </SortableContext>
-                      </DndContext>
-                    ) : (
-                      <p className="text-sm text-gray-500 text-center py-8">
-                        No testimonials available. Add testimonials to your forms first.
-                      </p>
+                          
+                          {allTestimonials && allTestimonials.length > 0 ? (
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={handleDragEnd}
+                            >
+                              <SortableContext
+                                items={testimonialOrder}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                                  {testimonialOrder
+                                    .map(id => allTestimonials.find(t => t.id === id))
+                                    .filter(Boolean)
+                                    .map((testimonial) => (
+                                      <SortableTestimonialItem
+                                        key={testimonial!.id}
+                                        testimonial={testimonial}
+                                        isSelected={selectedTestimonialIds.includes(testimonial!.id)}
+                                        onToggle={() => toggleTestimonial(testimonial!.id)}
+                                      />
+                                    ))}
+                                </div>
+                              </SortableContext>
+                            </DndContext>
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">
+                              No testimonials available. Add testimonials to your forms first.
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="display" className="p-6 space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Content Display</CardTitle>
+                        <CardDescription>Choose what information to show</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-rating">Show Rating Stars</Label>
+                          <Switch
+                            id="show-rating"
+                            checked={widget.config.display.showRating}
+                            onCheckedChange={(checked) => handleConfigUpdate(['display', 'showRating'], checked)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-photo">Show Customer Photo</Label>
+                          <Switch
+                            id="show-photo"
+                            checked={widget.config.display.showPhoto}
+                            onCheckedChange={(checked) => handleConfigUpdate(['display', 'showPhoto'], checked)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-company">Show Company Name</Label>
+                          <Switch
+                            id="show-company"
+                            checked={widget.config.display.showCompany}
+                            onCheckedChange={(checked) => handleConfigUpdate(['display', 'showCompany'], checked)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-date">Show Submission Date</Label>
+                          <Switch
+                            id="show-date"
+                            checked={widget.config.display.showDate}
+                            onCheckedChange={(checked) => handleConfigUpdate(['display', 'showDate'], checked)}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Text Settings</CardTitle>
+                        <CardDescription>Configure text display options</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="truncate-length">Truncate Length</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="truncate-length"
+                              type="number"
+                              value={truncateLength}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 200
+                                setTruncateLength(value)
+                                handleConfigUpdate(['display', 'truncateLength'], value, true)
+                              }}
+                              min="50"
+                              max="500"
+                              className="w-24"
+                            />
+                            <span className="text-sm text-gray-500">characters</span>
+                          </div>
+                          <p className="text-xs text-gray-500">Number of characters before truncation</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-read-more">Show Read More Button</Label>
+                          <Switch
+                            id="show-read-more"
+                            checked={widget.config.display.showReadMore ?? true}
+                            onCheckedChange={(checked) => handleConfigUpdate(['display', 'showReadMore'], checked)}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {widget.type !== 'single' && widget.type !== 'badge' && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Layout Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div>
+                            <Label>Items Per Page</Label>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Slider
+                                value={[widget.config.display.itemsPerPage || 9]}
+                                onValueChange={([value]) => handleConfigUpdate(['display', 'itemsPerPage'], value)}
+                                min={1}
+                                max={20}
+                                step={1}
+                                className="flex-1"
+                              />
+                              <span className="text-sm w-12 text-right">
+                                {widget.config.display.itemsPerPage || 9}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  </TabsContent>
 
-            <TabsContent value="display" className="p-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Content Display</CardTitle>
-                  <CardDescription>Choose what information to show</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="show-rating">Show Rating Stars</Label>
-                    <Switch
-                      id="show-rating"
-                      checked={widget.config.display.showRating}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showRating'], checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="show-photo">Show Customer Photo</Label>
-                    <Switch
-                      id="show-photo"
-                      checked={widget.config.display.showPhoto}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showPhoto'], checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="show-company">Show Company Name</Label>
-                    <Switch
-                      id="show-company"
-                      checked={widget.config.display.showCompany}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showCompany'], checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="show-date">Show Submission Date</Label>
-                    <Switch
-                      id="show-date"
-                      checked={widget.config.display.showDate}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showDate'], checked)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                  <TabsContent value="styling" className="p-6 space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Theme</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Theme Mode</Label>
+                          <Select
+                            value={widget.config.styling.theme}
+                            onValueChange={(value: any) => handleConfigUpdate(['styling', 'theme'], value)}
+                          >
+                            <SelectTrigger className="mt-2">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="light">Light</SelectItem>
+                              <SelectItem value="dark">Dark</SelectItem>
+                              <SelectItem value="custom">Custom</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Text Settings</CardTitle>
-                  <CardDescription>Configure text display options</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="truncate-length">Truncate Length</Label>
-                    <Input
-                      id="truncate-length"
-                      type="number"
-                      value={widget.config.display.truncateLength || 200}
-                      onChange={(e) => handleConfigUpdate(['display', 'truncateLength'], parseInt(e.target.value))}
-                      min="50"
-                      max="500"
-                    />
-                    <p className="text-xs text-gray-500">Number of characters before truncation</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="show-read-more">Show Read More Button</Label>
-                    <Switch
-                      id="show-read-more"
-                      checked={widget.config.display.showReadMore ?? true}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showReadMore'], checked)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                        {widget.config.styling.theme === 'custom' && (
+                          <>
+                            <div>
+                              <Label>Primary Color</Label>
+                              <div className="flex gap-2 mt-2">
+                                <Input
+                                  type="color"
+                                  value={widget.config.styling.primaryColor}
+                                  onChange={(e) => handleConfigUpdate(['styling', 'primaryColor'], e.target.value)}
+                                  className="w-20"
+                                />
+                                <Input
+                                  value={widget.config.styling.primaryColor}
+                                  onChange={(e) => handleConfigUpdate(['styling', 'primaryColor'], e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Background Color</Label>
+                              <div className="flex gap-2 mt-2">
+                                <Input
+                                  type="color"
+                                  value={widget.config.styling.backgroundColor}
+                                  onChange={(e) => handleConfigUpdate(['styling', 'backgroundColor'], e.target.value)}
+                                  className="w-20"
+                                />
+                                <Input
+                                  value={widget.config.styling.backgroundColor}
+                                  onChange={(e) => handleConfigUpdate(['styling', 'backgroundColor'], e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Text Color</Label>
+                              <div className="flex gap-2 mt-2">
+                                <Input
+                                  type="color"
+                                  value={widget.config.styling.textColor}
+                                  onChange={(e) => handleConfigUpdate(['styling', 'textColor'], e.target.value)}
+                                  className="w-20"
+                                />
+                                <Input
+                                  value={widget.config.styling.textColor}
+                                  onChange={(e) => handleConfigUpdate(['styling', 'textColor'], e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Legacy Text Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Maximum Text Length</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Slider
-                        value={[widget.config.display.maxLength || 300]}
-                        onValueChange={([value]) => handleConfigUpdate(['display', 'maxLength'], value)}
-                        min={50}
-                        max={500}
-                        step={10}
-                        className="flex-1"
-                      />
-                      <span className="text-sm w-12 text-right">
-                        {widget.config.display.maxLength || 300}
-                      </span>
-                    </div>
-                  </div>
-                  {widget.type !== 'single' && widget.type !== 'badge' && (
-                    <div>
-                      <Label>Items Per Page</Label>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Slider
-                          value={[widget.config.display.itemsPerPage || 9]}
-                          onValueChange={([value]) => handleConfigUpdate(['display', 'itemsPerPage'], value)}
-                          min={1}
-                          max={20}
-                          step={1}
-                          className="flex-1"
-                        />
-                        <span className="text-sm w-12 text-right">
-                          {widget.config.display.itemsPerPage || 9}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="filters" className="p-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Content Filters</CardTitle>
-                  <CardDescription>Control which testimonials appear</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="only-featured">Only Featured</Label>
-                    <Switch
-                      id="only-featured"
-                      checked={widget.config.filters.onlyFeatured}
-                      onCheckedChange={(checked) => handleConfigUpdate(['filters', 'onlyFeatured'], checked)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Minimum Rating</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Slider
-                        value={[widget.config.filters.minRating || 1]}
-                        onValueChange={([value]) => handleConfigUpdate(['filters', 'minRating'], value)}
-                        min={1}
-                        max={5}
-                        step={1}
-                        className="flex-1"
-                      />
-                      <span className="text-sm w-12 text-right">
-                        {widget.config.filters.minRating || 1}★
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Maximum Items</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Slider
-                        value={[widget.config.filters.maxItems || 20]}
-                        onValueChange={([value]) => handleConfigUpdate(['filters', 'maxItems'], value)}
-                        min={1}
-                        max={50}
-                        step={1}
-                        className="flex-1"
-                      />
-                      <span className="text-sm w-12 text-right">
-                        {widget.config.filters.maxItems || 20}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Form Selection</CardTitle>
-                  <CardDescription>Choose which forms to include</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {forms?.map((form) => (
-                      <div key={form.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`form-${form.id}`}
-                          checked={widget.config.filters.formIds?.includes(form.id) || false}
-                          onChange={(e) => {
-                            const formIds = widget.config.filters.formIds || []
-                            if (e.target.checked) {
-                              handleConfigUpdate(['filters', 'formIds'], [...formIds, form.id])
-                            } else {
-                              handleConfigUpdate(['filters', 'formIds'], formIds.filter(id => id !== form.id))
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <Label htmlFor={`form-${form.id}`} className="font-normal cursor-pointer">
-                          {form.name}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="styling" className="p-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Theme</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Theme Mode</Label>
-                    <Select
-                      value={widget.config.styling.theme}
-                      onValueChange={(value: any) => handleConfigUpdate(['styling', 'theme'], value)}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {widget.config.styling.theme === 'custom' && (
-                    <>
-                      <div>
-                        <Label>Primary Color</Label>
-                        <div className="flex gap-2 mt-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Layout</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Density</Label>
+                          <Select
+                            value={widget.config.styling.layout}
+                            onValueChange={(value: any) => handleConfigUpdate(['styling', 'layout'], value)}
+                          >
+                            <SelectTrigger className="mt-2">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="compact">Compact</SelectItem>
+                              <SelectItem value="comfortable">Comfortable</SelectItem>
+                              <SelectItem value="spacious">Spacious</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Shadow</Label>
+                          <Select
+                            value={widget.config.styling.shadow}
+                            onValueChange={(value: any) => handleConfigUpdate(['styling', 'shadow'], value)}
+                          >
+                            <SelectTrigger className="mt-2">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem value="sm">Small</SelectItem>
+                              <SelectItem value="md">Medium</SelectItem>
+                              <SelectItem value="lg">Large</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Border Radius</Label>
                           <Input
-                            type="color"
-                            value={widget.config.styling.primaryColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'primaryColor'], e.target.value)}
-                            className="w-20"
-                          />
-                          <Input
-                            value={widget.config.styling.primaryColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'primaryColor'], e.target.value)}
+                            value={widget.config.styling.borderRadius}
+                            onChange={(e) => handleConfigUpdate(['styling', 'borderRadius'], e.target.value)}
+                            placeholder="e.g., 0.5rem, 8px"
+                            className="mt-2"
                           />
                         </div>
-                      </div>
-                      <div>
-                        <Label>Background Color</Label>
-                        <div className="flex gap-2 mt-2">
-                          <Input
-                            type="color"
-                            value={widget.config.styling.backgroundColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'backgroundColor'], e.target.value)}
-                            className="w-20"
-                          />
-                          <Input
-                            value={widget.config.styling.backgroundColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'backgroundColor'], e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Text Color</Label>
-                        <div className="flex gap-2 mt-2">
-                          <Input
-                            type="color"
-                            value={widget.config.styling.textColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'textColor'], e.target.value)}
-                            className="w-20"
-                          />
-                          <Input
-                            value={widget.config.styling.textColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'textColor'], e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                      </CardContent>
+                    </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Layout</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Density</Label>
-                    <Select
-                      value={widget.config.styling.layout}
-                      onValueChange={(value: any) => handleConfigUpdate(['styling', 'layout'], value)}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="compact">Compact</SelectItem>
-                        <SelectItem value="comfortable">Comfortable</SelectItem>
-                        <SelectItem value="spacious">Spacious</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Shadow</Label>
-                    <Select
-                      value={widget.config.styling.shadow}
-                      onValueChange={(value: any) => handleConfigUpdate(['styling', 'shadow'], value)}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="sm">Small</SelectItem>
-                        <SelectItem value="md">Medium</SelectItem>
-                        <SelectItem value="lg">Large</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Border Radius</Label>
-                    <Input
-                      value={widget.config.styling.borderRadius}
-                      onChange={(e) => handleConfigUpdate(['styling', 'borderRadius'], e.target.value)}
-                      placeholder="e.g., 0.5rem, 8px"
-                      className="mt-2"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Fallback Avatar</CardTitle>
-                  <CardDescription>Display options when customer photo is not available</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Avatar Type</Label>
-                    <Select
-                      value={widget.config.styling.fallbackAvatar?.type || 'initials'}
-                      onValueChange={(value: 'initials' | 'placeholder') => 
-                        handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                          ...widget.config.styling.fallbackAvatar,
-                          type: value
-                        })
-                      }
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="initials">Customer Initials</SelectItem>
-                        <SelectItem value="placeholder">Placeholder Image</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {widget.config.styling.fallbackAvatar?.type === 'initials' && (
-                    <>
-                      <div>
-                        <Label>Background Color</Label>
-                        <div className="flex gap-2 mt-2">
-                          <Input
-                            type="color"
-                            value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
-                            onChange={(e) => 
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Fallback Avatar</CardTitle>
+                        <CardDescription>Display options when customer photo is not available</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Avatar Type</Label>
+                          <Select
+                            value={widget.config.styling.fallbackAvatar?.type || 'initials'}
+                            onValueChange={(value: 'initials' | 'placeholder') => 
                               handleConfigUpdate(['styling', 'fallbackAvatar'], {
                                 ...widget.config.styling.fallbackAvatar,
-                                backgroundColor: e.target.value
+                                type: value
                               })
                             }
-                            className="w-20"
-                          />
-                          <Input
-                            value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
-                            onChange={(e) => 
-                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                ...widget.config.styling.fallbackAvatar,
-                                backgroundColor: e.target.value
-                              })
-                            }
-                          />
+                          >
+                            <SelectTrigger className="mt-2">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="initials">Customer Initials</SelectItem>
+                              <SelectItem value="placeholder">Placeholder Image</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                      </div>
-                      <div>
-                        <Label>Text Color</Label>
-                        <div className="flex gap-2 mt-2">
-                          <Input
-                            type="color"
-                            value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
-                            onChange={(e) => 
-                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                ...widget.config.styling.fallbackAvatar,
-                                textColor: e.target.value
-                              })
-                            }
-                            className="w-20"
-                          />
-                          <Input
-                            value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
-                            onChange={(e) => 
-                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                ...widget.config.styling.fallbackAvatar,
-                                textColor: e.target.value
-                              })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
 
-                  {widget.config.styling.fallbackAvatar?.type === 'placeholder' && (
-                    <div>
-                      <Label>Placeholder Image URL</Label>
-                      <Input
-                        value={widget.config.styling.fallbackAvatar?.placeholderUrl || ''}
-                        onChange={(e) => 
-                          handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                            ...widget.config.styling.fallbackAvatar,
-                            placeholderUrl: e.target.value
-                          })
-                        }
-                        placeholder="https://example.com/placeholder.png"
-                        className="mt-2"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Provide a URL to a placeholder image
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                        {widget.config.styling.fallbackAvatar?.type === 'initials' && (
+                          <>
+                            <div>
+                              <Label>Background Color</Label>
+                              <div className="flex gap-2 mt-2">
+                                <Input
+                                  type="color"
+                                  value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
+                                  onChange={(e) => 
+                                    handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                      ...widget.config.styling.fallbackAvatar,
+                                      backgroundColor: e.target.value
+                                    })
+                                  }
+                                  className="w-20"
+                                />
+                                <Input
+                                  value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
+                                  onChange={(e) => 
+                                    handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                      ...widget.config.styling.fallbackAvatar,
+                                      backgroundColor: e.target.value
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Text Color</Label>
+                              <div className="flex gap-2 mt-2">
+                                <Input
+                                  type="color"
+                                  value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
+                                  onChange={(e) => 
+                                    handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                      ...widget.config.styling.fallbackAvatar,
+                                      textColor: e.target.value
+                                    })
+                                  }
+                                  className="w-20"
+                                />
+                                <Input
+                                  value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
+                                  onChange={(e) => 
+                                    handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                      ...widget.config.styling.fallbackAvatar,
+                                      textColor: e.target.value
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
 
-            <TabsContent value="embed" className="p-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Embed Code</CardTitle>
-                  <CardDescription>Copy this code to add the widget to your website</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg">
-                    <code className="text-sm whitespace-pre font-mono">
-{`<!-- Testimonial Tiger Widget -->
-<div id="tt-widget-${widgetId}"></div>
-<script src="${window.location.origin}/widget/${widgetId}" async></script>`}
-                    </code>
-                  </div>
-                  <Button 
-                    className="w-full mt-4" 
-                    onClick={copyEmbedCode}
-                    variant={embedCodeCopied ? 'default' : 'outline'}
-                  >
-                    <Code className="w-4 h-4 mr-2" />
-                    {embedCodeCopied ? 'Copied!' : 'Copy Embed Code'}
-                  </Button>
-                </CardContent>
-              </Card>
+                        {widget.config.styling.fallbackAvatar?.type === 'placeholder' && (
+                          <div className="space-y-3">
+                            <div>
+                              <Label>Upload Placeholder Image</Label>
+                              <div className="mt-2">
+                                <input
+                                  ref={fileInputRef}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleAvatarUpload}
+                                  className="hidden"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  disabled={isUploadingAvatar}
+                                  className="w-full"
+                                >
+                                  {isUploadingAvatar ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                                      Uploading...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="w-4 h-4 mr-2" />
+                                      Upload Image
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {widget.config.styling.fallbackAvatar?.placeholderUrl && (
+                              <div className="space-y-2">
+                                <Label>Current Placeholder</Label>
+                                <div className="flex items-center gap-3 p-3 border rounded-lg">
+                                  <img
+                                    src={widget.config.styling.fallbackAvatar.placeholderUrl}
+                                    alt="Placeholder avatar"
+                                    className="w-10 h-10 rounded-full object-cover"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm text-gray-600 truncate">
+                                      {widget.config.styling.fallbackAvatar.placeholderUrl.split('/').pop()}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => 
+                                      handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                        ...widget.config.styling.fallbackAvatar,
+                                        placeholderUrl: ''
+                                      }, true)
+                                    }
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div>
+                              <Label>Or Use Image URL</Label>
+                              <Input
+                                value={widget.config.styling.fallbackAvatar?.placeholderUrl || ''}
+                                onChange={(e) => 
+                                  handleConfigUpdate(['styling', 'fallbackAvatar'], {
+                                    ...widget.config.styling.fallbackAvatar,
+                                    placeholderUrl: e.target.value
+                                  })
+                                }
+                                placeholder="https://example.com/placeholder.png"
+                                className="mt-2"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Provide a URL to a placeholder image
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </div>
+              
+              {/* Collapse button */}
+              <button
+                onClick={() => setLeftPanelCollapsed(true)}
+                className="absolute top-4 right-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 z-10"
+                aria-label="Collapse left panel"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Domain Whitelist</CardTitle>
-                  <CardDescription>
-                    Control which domains can display this widget (one per line)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    placeholder="example.com
-www.example.com
-subdomain.example.com"
-                    value={widget.allowedDomains?.join('\n') || ''}
-                    onChange={(e) => handleDomainsUpdate(e.target.value)}
-                    rows={5}
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Leave empty to allow all domains
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+        {/* Collapsed Left Panel Indicator */}
+        {leftPanelCollapsed && (
+          <div
+            className="w-8 border-r border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer flex items-center justify-center group"
+            onClick={() => setLeftPanelCollapsed(false)}
+          >
+            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        )}
 
-        {/* Preview Panel */}
+        {/* Center Panel - Preview */}
         <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950 p-8">
           <div className="mx-auto transition-all duration-300" style={{
             maxWidth: previewDevice === 'mobile' ? '375px' : '100%',
           }}>
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
+            <div 
+              className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6"
+              style={{
+                backgroundColor: widget.config.styling.theme === 'dark' 
+                  ? '#1f2937' 
+                  : widget.config.styling.theme === 'custom' 
+                    ? widget.config.styling.backgroundColor 
+                    : '#ffffff',
+                color: widget.config.styling.theme === 'dark'
+                  ? '#f3f4f6'
+                  : widget.config.styling.theme === 'custom'
+                    ? widget.config.styling.textColor
+                    : '#374151',
+              }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Live Preview</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Eye className="w-4 h-4" />
-                  {selectedTestimonialIds.length > 0 
-                    ? `${selectedTestimonialIds.length} selected`
-                    : `${allTestimonials?.length || 0} testimonials`}
+                <div className="flex items-center gap-2">
+                  {isSaving && (
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <Check className="w-4 h-4" />
+                      Saved
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Eye className="w-4 h-4" />
+                    {selectedTestimonialIds.length > 0 
+                      ? `${selectedTestimonialIds.length} selected`
+                      : `${allTestimonials?.length || 0} testimonials`}
+                  </div>
                 </div>
               </div>
               <WidgetPreview 
@@ -870,6 +932,10 @@ subdomain.example.com"
                   ...widget,
                   config: {
                     ...widget.config,
+                    display: {
+                      ...widget.config.display,
+                      truncateLength: truncateLength,
+                    },
                     filters: {
                       ...widget.config.filters,
                       selectedTestimonialIds: selectedTestimonialIds,
@@ -904,6 +970,169 @@ subdomain.example.com"
             </div>
           </div>
         </div>
+
+        {/* Collapsed Right Panel Indicator */}
+        {rightPanelCollapsed && (
+          <div
+            className="w-8 border-l border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer flex items-center justify-center group"
+            onClick={() => setRightPanelCollapsed(false)}
+          >
+            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </div>
+        )}
+
+        {/* Right Panel - Additional Settings */}
+        <AnimatePresence initial={false}>
+          {!rightPanelCollapsed && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: '320px', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="relative border-l bg-white dark:bg-gray-800 overflow-hidden"
+            >
+              <div className="h-full overflow-y-auto p-6 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Filters</CardTitle>
+                    <CardDescription>Control which testimonials appear</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="only-featured">Only Featured</Label>
+                      <Switch
+                        id="only-featured"
+                        checked={widget.config.filters.onlyFeatured}
+                        onCheckedChange={(checked) => handleConfigUpdate(['filters', 'onlyFeatured'], checked)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Minimum Rating</Label>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Slider
+                          value={[widget.config.filters.minRating || 1]}
+                          onValueChange={([value]) => handleConfigUpdate(['filters', 'minRating'], value)}
+                          min={1}
+                          max={5}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-sm w-12 text-right">
+                          {widget.config.filters.minRating || 1}★
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Maximum Items</Label>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Slider
+                          value={[widget.config.filters.maxItems || 20]}
+                          onValueChange={([value]) => handleConfigUpdate(['filters', 'maxItems'], value)}
+                          min={1}
+                          max={50}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-sm w-12 text-right">
+                          {widget.config.filters.maxItems || 20}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Form Selection</CardTitle>
+                    <CardDescription>Choose which forms to include</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {forms?.map((form) => (
+                        <div key={form.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`form-${form.id}`}
+                            checked={widget.config.filters.formIds?.includes(form.id) || false}
+                            onCheckedChange={(checked) => {
+                              const formIds = widget.config.filters.formIds || []
+                              if (checked) {
+                                handleConfigUpdate(['filters', 'formIds'], [...formIds, form.id])
+                              } else {
+                                handleConfigUpdate(['filters', 'formIds'], formIds.filter(id => id !== form.id))
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`form-${form.id}`} className="font-normal cursor-pointer">
+                            {form.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Embed Code</CardTitle>
+                    <CardDescription>Copy this code to add the widget to your website</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto">
+                      <pre className="text-xs font-mono whitespace-pre-wrap break-all">
+{`<!-- Testimonial Tiger Widget -->
+<div id="tt-widget-${widgetId}"></div>
+<script src="${window.location.origin}/widget/${widgetId}" async></script>`}
+                      </pre>
+                    </div>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={copyEmbedCode}
+                      variant={embedCodeCopied ? 'default' : 'outline'}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      {embedCodeCopied ? 'Copied!' : 'Copy Embed Code'}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Domain Whitelist</CardTitle>
+                    <CardDescription>
+                      Control which domains can display this widget (one per line)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      placeholder="example.com
+www.example.com
+subdomain.example.com"
+                      value={widget.allowedDomains?.join('\n') || ''}
+                      onChange={(e) => handleDomainsUpdate(e.target.value)}
+                      rows={5}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Leave empty to allow all domains
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Collapse button */}
+              <button
+                onClick={() => setRightPanelCollapsed(true)}
+                className="absolute top-4 left-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="Collapse right panel"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )
