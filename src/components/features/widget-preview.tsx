@@ -127,8 +127,8 @@ export function WidgetPreview({ widget, testimonials }: WidgetPreviewProps) {
 
         {/* Content */}
         <p className="text-sm leading-relaxed mb-4">
-          {config.display.maxLength && testimonial.content.length > config.display.maxLength
-            ? `${testimonial.content.slice(0, config.display.maxLength)}...`
+          {config.display.truncateLength && testimonial.content.length > config.display.truncateLength
+            ? `${testimonial.content.slice(0, config.display.truncateLength)}...`
             : testimonial.content}
         </p>
 
