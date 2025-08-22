@@ -105,9 +105,17 @@ export function WidgetPreview({ widget, testimonials }: WidgetPreviewProps) {
           'bg-white dark:bg-gray-800 rounded-lg'
         )}
         style={{
-          backgroundColor: config.styling.theme === 'custom' ? config.styling.backgroundColor : undefined,
+          backgroundColor: config.styling.theme === 'custom' 
+            ? config.styling.backgroundColor 
+            : config.styling.theme === 'dark' 
+              ? '#1f2937' 
+              : undefined,
           borderRadius: config.styling.borderRadius,
-          color: config.styling.theme === 'custom' ? config.styling.textColor : undefined,
+          color: config.styling.theme === 'custom' 
+            ? config.styling.textColor 
+            : config.styling.theme === 'dark'
+              ? '#f3f4f6'
+              : undefined,
         }}
       >
         {/* Rating */}
@@ -126,11 +134,18 @@ export function WidgetPreview({ widget, testimonials }: WidgetPreviewProps) {
         )}
 
         {/* Content */}
-        <p className="text-sm leading-relaxed mb-4">
-          {config.display.truncateLength && testimonial.content.length > config.display.truncateLength
-            ? `${testimonial.content.slice(0, config.display.truncateLength)}...`
-            : testimonial.content}
-        </p>
+        <div className="mb-4">
+          <p className="text-sm leading-relaxed">
+            {config.display.truncateLength && testimonial.content.length > config.display.truncateLength
+              ? `${testimonial.content.slice(0, config.display.truncateLength)}...`
+              : testimonial.content}
+          </p>
+          {config.display.showReadMore && config.display.truncateLength && testimonial.content.length > config.display.truncateLength && (
+            <button className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-2">
+              Read More
+            </button>
+          )}
+        </div>
 
         {/* Customer Info */}
         <div className="flex items-center gap-3">

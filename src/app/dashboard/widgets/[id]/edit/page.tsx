@@ -483,6 +483,12 @@ export default function WidgetEditorPage() {
                         type="number"
                         value={truncateLength}
                         onChange={(e) => {
+                          const value = e.target.value === '' ? 0 : parseInt(e.target.value)
+                          if (!isNaN(value)) {
+                            setTruncateLength(value)
+                          }
+                        }}
+                        onBlur={(e) => {
                           const value = parseInt(e.target.value) || 200
                           setTruncateLength(value)
                           handleConfigUpdate(['display', 'truncateLength'], value, true)
