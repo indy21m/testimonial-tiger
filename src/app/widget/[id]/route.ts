@@ -434,6 +434,15 @@ function renderTestimonial(testimonial: any, config: any): string {
         </div>
       ` : ''}
       
+      ${testimonial.videoUrl ? `
+        <div class="tt-video" style="margin-bottom: 16px;">
+          <video controls style="width: 100%; border-radius: 8px;">
+            <source src="${escapeHtml(testimonial.videoUrl)}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      ` : ''}
+      
       <div class="tt-content">
         <span class="tt-content-text">${escapeHtml(truncatedContent)}</span>
         ${needsTruncation ? `

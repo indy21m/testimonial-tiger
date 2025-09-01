@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Monitor, Smartphone, Eye, GripVertical, Upload, X, Code } from 'lucide-react'
+import { getWidgetEmbedCode } from '@/lib/utils/widget-url'
 import { toast } from 'sonner'
 import { debounce } from 'lodash'
 import { WidgetPreview } from '@/components/features/widget-preview'
@@ -267,9 +268,7 @@ export default function WidgetEditorPage() {
   }
 
   const copyEmbedCode = () => {
-    const embedCode = `<!-- Testimonial Tiger Widget -->
-<div id="tt-widget-${widgetId}"></div>
-<script src="${window.location.origin}/widget/${widgetId}" async></script>`
+    const embedCode = getWidgetEmbedCode(widgetId)
     
     navigator.clipboard.writeText(embedCode)
     setEmbedCodeCopied(true)
@@ -924,9 +923,7 @@ export default function WidgetEditorPage() {
                 <CardContent>
                   <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto">
                     <pre className="text-xs font-mono whitespace-pre-wrap break-all">
-{`<!-- Testimonial Tiger Widget -->
-<div id="tt-widget-${widgetId}"></div>
-<script src="${window.location.origin}/widget/${widgetId}" async></script>`}
+{getWidgetEmbedCode(widgetId)}
                     </pre>
                   </div>
                   <Button 

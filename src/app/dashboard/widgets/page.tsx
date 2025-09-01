@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { api } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
 import { DashboardNav } from '@/components/features/dashboard-nav'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Edit, Copy, Trash2, Code, Eye, Layout, Layers, Grid, Badge, Square } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Plus, Edit, Copy, Trash2, Code, Eye, Layout, Layers, Grid, Badge, Square, MoreVertical, ExternalLink, Star } from 'lucide-react'
+import { getWidgetEmbedCode, getWidgetPreviewUrl } from '@/lib/utils/widget-url'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 import {
@@ -21,6 +22,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const widgetTypeConfig = {
   wall: { 
@@ -59,7 +67,6 @@ export default function WidgetsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newWidgetName, setNewWidgetName] = useState('')
   const [newWidgetType, setNewWidgetType] = useState<'wall' | 'carousel' | 'grid' | 'single' | 'badge'>('wall')
-  const [embedCodeWidgetId, setEmbedCodeWidgetId] = useState<string>()
 
   const { data: widgets, refetch } = api.widget.list.useQuery()
 
@@ -108,13 +115,21 @@ export default function WidgetsPage() {
   }
 
   const copyEmbedCode = (widgetId: string) => {
-    const embedCode = `<!-- Testimonial Tiger Widget -->
-<div id="tt-widget-${widgetId}"></div>
-<script src="${window.location.origin}/widget/${widgetId}" async></script>`
-    
+    const embedCode = getWidgetEmbedCode(widgetId)
     navigator.clipboard.writeText(embedCode)
     toast.success('Embed code copied to clipboard')
-    setEmbedCodeWidgetId(undefined)
+  }
+
+  const copyWidgetUrl = (widgetId: string) => {
+    const url = getWidgetPreviewUrl(widgetId)
+    navigator.clipboard.writeText(url)
+    toast.success('Widget URL copied to clipboard')
+  }
+
+  const handleDelete = (widgetId: string) => {
+    if (confirm('Are you sure you want to delete this widget?')) {
+      deleteMutation.mutate({ id: widgetId })
+    }
   }
 
   return (
@@ -205,115 +220,139 @@ export default function WidgetsPage() {
             </Button>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6">
             {widgets.map((widget) => {
               const typeConfig = widgetTypeConfig[widget.type]
               const Icon = typeConfig.icon
               
               return (
-                <Card key={widget.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className={`p-2 rounded-lg ${typeConfig.color}`}>
-                        <Icon className="w-5 h-5" />
+                <Card key={widget.id} className="overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer group">
+                  <div className="p-6">
+                    {/* Header with dropdown menu */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-4">
+                        <div className={`p-3 rounded-lg ${typeConfig.color}`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">{widget.name}</h3>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                            <span className="capitalize">{widget.type}</span>
+                            <span>•</span>
+                            <span>{widget.type === 'wall' ? 'Testimonial Masonry' : widget.type === 'carousel' ? 'Testimonial Carousel' : widget.type === 'grid' ? 'Testimonial Grid' : widget.type === 'single' ? 'Single Testimonial' : 'Testimonial Badge'}</span>
+                            <span>•</span>
+                            <span>Landing Page</span>
+                            <span>•</span>
+                            <span>Edited {widget.updatedAt ? formatDistanceToNow(new Date(widget.updatedAt), { addSuffix: true }) : 'recently'}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          asChild
-                        >
-                          <Link href={`/dashboard/widgets/${widget.id}/edit`}>
-                            <Edit className="w-4 h-4" />
-                          </Link>
-                        </Button>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setEmbedCodeWidgetId(widget.id)}
-                            >
-                              <Code className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          {embedCodeWidgetId === widget.id && (
-                            <DialogContent className="sm:max-w-[600px]">
-                              <DialogHeader>
-                                <DialogTitle>Embed Code</DialogTitle>
-                                <DialogDescription>
-                                  Copy this code to embed the widget on your website
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-                                <code className="text-sm whitespace-pre">
-{`<!-- Testimonial Tiger Widget -->
-<div id="tt-widget-${widget.id}"></div>
-<script src="${window.location.origin}/widget/${widget.id}" async></script>`}
-                                </code>
-                              </div>
-                              <DialogFooter>
-                                <Button onClick={() => copyEmbedCode(widget.id)}>
-                                  Copy to Clipboard
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          )}
-                        </Dialog>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/widgets/${widget.id}/edit`} className="flex items-center">
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => copyEmbedCode(widget.id)}>
+                            <Code className="mr-2 h-4 w-4" />
+                            Copy Code
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => copyWidgetUrl(widget.id)}>
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Copy URL
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => duplicateMutation.mutate({ id: widget.id })}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(widget.id)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Mini preview section */}
+                    <Link href={`/dashboard/widgets/${widget.id}/edit`}>
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4 min-h-[120px] group-hover:bg-gray-100 dark:group-hover:bg-gray-800 transition-colors">
+                        <div className="flex items-center justify-center h-full">
+                          <div className="text-center">
+                            <p className="text-sm text-gray-500 mb-2">Wall of Love</p>
+                            <div className="flex -space-x-2 justify-center">
+                              {/* Sample avatar circles */}
+                              <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-white text-xs font-semibold">JJ</div>
+                              <div className="w-8 h-8 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-semibold">VG</div>
+                              <div className="w-8 h-8 rounded-full bg-green-500 border-2 border-white flex items-center justify-center text-white text-xs font-semibold">RR</div>
+                              <div className="w-8 h-8 rounded-full bg-yellow-500 border-2 border-white flex items-center justify-center text-white text-xs font-semibold">SR</div>
+                              <div className="w-8 h-8 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center text-gray-600 text-xs font-semibold">+2</div>
+                            </div>
+                            <div className="flex justify-center mt-2">
+                              {[1,2,3,4,5].map(i => (
+                                <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Stats section */}
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Views</p>
+                        <p className="font-semibold text-lg">{(widget.impressions || 0).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Engagements</p>
+                        <p className="font-semibold text-lg">42</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Engagement rate</p>
+                        <p className="font-semibold text-lg">3.1%</p>
                       </div>
                     </div>
-                    <CardTitle className="mt-3">{widget.name}</CardTitle>
-                    <CardDescription>
-                      <span className="inline-flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
-                        {typeConfig.label}
-                      </span>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Impressions</span>
-                        <span className="font-medium">{(widget.impressions || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Created</span>
-                        <span className="font-medium">
-                          {widget.createdAt ? formatDistanceToNow(new Date(widget.createdAt), { addSuffix: true }) : 'Recently'}
-                        </span>
-                      </div>
-                      <div className="flex gap-2 pt-2 border-t">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          asChild
-                        >
-                          <Link href={`/dashboard/widgets/${widget.id}/edit`}>
-                            <Eye className="w-3 h-3 mr-1" />
-                            Preview
-                          </Link>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => duplicateMutation.mutate({ id: widget.id })}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            if (confirm('Are you sure you want to delete this widget?')) {
-                              deleteMutation.mutate({ id: widget.id })
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
+
+                    {/* Action buttons */}
+                    <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        asChild
+                      >
+                        <Link href={`/dashboard/widgets/${widget.id}/edit`}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview
+                        </Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => duplicateMutation.mutate({ id: widget.id })}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(widget.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </CardContent>
+                  </div>
                 </Card>
               )
             })}
