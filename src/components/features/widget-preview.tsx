@@ -133,6 +133,20 @@ export function WidgetPreview({ widget, testimonials }: WidgetPreviewProps) {
           </div>
         )}
 
+        {/* Video */}
+        {testimonial.videoUrl && (
+          <div className="mb-4">
+            <video 
+              controls 
+              className="w-full rounded-lg"
+              style={{ maxHeight: '300px' }}
+            >
+              <source src={testimonial.videoUrl} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        )}
+
         {/* Content */}
         <div className="mb-4">
           <p className="text-sm leading-relaxed">

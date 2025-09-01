@@ -220,7 +220,7 @@ export default function WidgetsPage() {
             </Button>
           </Card>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {widgets.map((widget) => {
               const typeConfig = widgetTypeConfig[widget.type]
               const Icon = typeConfig.icon
@@ -234,14 +234,10 @@ export default function WidgetsPage() {
                         <div className={`p-3 rounded-lg ${typeConfig.color}`}>
                           <Icon className="w-5 h-5" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <h3 className="font-semibold text-lg">{widget.name}</h3>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                          <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
                             <span className="capitalize">{widget.type}</span>
-                            <span>•</span>
-                            <span>{widget.type === 'wall' ? 'Testimonial Masonry' : widget.type === 'carousel' ? 'Testimonial Carousel' : widget.type === 'grid' ? 'Testimonial Grid' : widget.type === 'single' ? 'Single Testimonial' : 'Testimonial Badge'}</span>
-                            <span>•</span>
-                            <span>Landing Page</span>
                             <span>•</span>
                             <span>Edited {widget.updatedAt ? formatDistanceToNow(new Date(widget.updatedAt), { addSuffix: true }) : 'recently'}</span>
                           </div>
