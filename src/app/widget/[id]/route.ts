@@ -20,7 +20,13 @@ export async function GET(
     })
 
     if (!widget) {
-      return new NextResponse('Widget not found', { status: 404 })
+      console.error(`Widget not found for ID: ${widgetId}`)
+      return new NextResponse('// Widget not found', { 
+        status: 404,
+        headers: {
+          'Content-Type': 'application/javascript',
+        }
+      })
     }
 
     // Check domain whitelist
@@ -104,7 +110,15 @@ export async function GET(
     })
   } catch (error) {
     console.error('Widget error:', error)
-    return new NextResponse('Internal server error', { status: 500 })
+    // Return a simple JavaScript that logs the error
+    const errorJs = `console.error('Widget Error:', '${error}');`
+    return new NextResponse(errorJs, { 
+      status: 200,
+      headers: {
+        'Content-Type': 'application/javascript',
+        'Access-Control-Allow-Origin': '*',
+      }
+    })
   }
 }
 
@@ -320,9 +334,9 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
   }
 
   // Generate JavaScript
-  const js = `
+  const js = `console.log('Testimonial Tiger Widget Script Loaded - ID: ${widgetId}');
 (function() {
-  console.log('Testimonial Tiger Widget loading for ID: ${widgetId}');
+  console.log('Testimonial Tiger Widget IIFE executing for ID: ${widgetId}');
   
   // Add styles
   var style = document.createElement('style');

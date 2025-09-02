@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Widget Test</title>
+</head>
+<body>
+    <h1>Simple Widget Test</h1>
+    
+    <div id="tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d">Loading widget...</div>
+    
+    <script>
+        console.log('Before loading widget script');
+        
+        // Try to load the widget directly with fetch to see what we get
+        fetch('https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d')
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers.get('content-type'));
+                return response.text();
+            })
+            .then(text => {
+                console.log('Script content (first 500 chars):', text.substring(0, 500));
+                // Try to execute it
+                try {
+                    eval(text);
+                } catch (e) {
+                    console.error('Error executing script:', e);
+                }
+            })
+            .catch(error => {
+                console.error('Failed to fetch widget:', error);
+            });
+    </script>
+    
+    <!-- Also try the normal script tag -->
+    <script src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"></script>
+</body>
+</html>
