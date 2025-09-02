@@ -11,6 +11,7 @@ export async function GET(
 ) {
   const params = await context.params
   try {
+    // Handle both with and without .js extension
     const widgetId = params.id.replace('.js', '')
     
     // Get widget configuration
@@ -321,6 +322,8 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
   // Generate JavaScript
   const js = `
 (function() {
+  console.log('Testimonial Tiger Widget loading for ID: ${widgetId}');
+  
   // Add styles
   var style = document.createElement('style');
   style.textContent = \`${css}\`;
@@ -328,8 +331,11 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
   
   // Add HTML
   var container = document.getElementById('tt-widget-${widgetId}');
+  console.log('Container found:', container);
+  
   if (container) {
     container.innerHTML = \`${html.replace(/\`/g, '\\`')}\`;
+    console.log('Widget HTML injected successfully');
     
     // Initialize carousel if needed
     ${widget.type === 'carousel' && testimonials.length > 1 ? `
@@ -361,6 +367,8 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
         showSlide(currentSlide + 1);
       }, 5000);
     ` : ''}
+  } else {
+    console.error('Widget container not found for ID: tt-widget-${widgetId}');
   }
 })();
   `
