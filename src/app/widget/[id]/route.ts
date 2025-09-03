@@ -350,18 +350,26 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
 (function() {
   console.log('Testimonial Tiger Widget IIFE executing for ID: ${widgetId}');
   
-  // Add styles
-  var style = document.createElement('style');
-  style.textContent = \`${css}\`;
-  document.head.appendChild(style);
-  
-  // Add HTML
-  var container = document.getElementById('tt-widget-${widgetId}');
-  console.log('Container found:', container);
-  
-  if (container) {
-    container.innerHTML = \`${html.replace(/\`/g, '\\`')}\`;
-    console.log('Widget HTML injected successfully');
+  // Function to initialize the widget
+  function initWidget() {
+    console.log('Attempting to initialize widget for ID: ${widgetId}');
+    
+    // Add styles if not already added
+    if (!document.getElementById('tt-styles-${widgetId}')) {
+      var style = document.createElement('style');
+      style.id = 'tt-styles-${widgetId}';
+      style.textContent = \`${css}\`;
+      document.head.appendChild(style);
+      console.log('Styles added for widget ${widgetId}');
+    }
+    
+    // Find container
+    var container = document.getElementById('tt-widget-${widgetId}');
+    console.log('Container search result:', container);
+    
+    if (container) {
+      container.innerHTML = \`${html.replace(/\`/g, '\\`')}\`;
+      console.log('Widget HTML injected successfully for ${widgetId}');
     
     // Initialize carousel if needed
     ${widget.type === 'carousel' && testimonials.length > 1 ? `
@@ -393,8 +401,49 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
         showSlide(currentSlide + 1);
       }, 5000);
     ` : ''}
+      return true; // Widget initialized successfully
+    } else {
+      console.log('Container not found for widget ${widgetId}');
+      return false; // Container not found
+    }
+  }
+  
+  // Try to initialize immediately
+  if (initWidget()) {
+    console.log('Widget initialized immediately');
   } else {
-    console.error('Widget container not found for ID: tt-widget-${widgetId}');
+    // If container not found, set up retry mechanism
+    console.log('Container not found immediately, setting up retry mechanism');
+    var attempts = 0;
+    var maxAttempts = 20;
+    var retryInterval = setInterval(function() {
+      attempts++;
+      console.log('Retry attempt ' + attempts + ' for widget ${widgetId}');
+      
+      if (initWidget()) {
+        console.log('Widget initialized after ' + attempts + ' attempts');
+        clearInterval(retryInterval);
+      } else if (attempts >= maxAttempts) {
+        console.error('Failed to find container after ' + maxAttempts + ' attempts for widget ${widgetId}');
+        clearInterval(retryInterval);
+      }
+    }, 500); // Try every 500ms
+  }
+  
+  // Also try on DOMContentLoaded if document is still loading
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOMContentLoaded - attempting to initialize widget ${widgetId}');
+      initWidget();
+    });
+  }
+  
+  // Also try on window load as a final fallback
+  if (window.addEventListener) {
+    window.addEventListener('load', function() {
+      console.log('Window loaded - final attempt to initialize widget ${widgetId}');
+      initWidget();
+    });
   }
 })();
   `
