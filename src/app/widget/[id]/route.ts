@@ -6,7 +6,7 @@ import { eq, and, desc, gte, inArray, sql } from 'drizzle-orm'
 export const dynamic = 'force-dynamic'
 
 // Handle CORS preflight
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
