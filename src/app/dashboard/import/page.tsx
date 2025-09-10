@@ -5,10 +5,22 @@ import Link from 'next/link'
 import { api } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
 import { DashboardNav } from '@/components/features/dashboard-nav'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Upload, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Progress } from '@/components/ui/progress'
@@ -42,11 +54,13 @@ export default function ImportPage() {
     failed: number
     duplicates: number
   }>()
-  const [senjaTestimonials, setSenjaTestimonials] = useState<SenjaTestimonial[]>([])
+  const [senjaTestimonials, setSenjaTestimonials] = useState<
+    SenjaTestimonial[]
+  >([])
   const [isFetching, setIsFetching] = useState(false)
 
   const { data: forms } = api.form.list.useQuery()
-  
+
   const importMutation = api.testimonial.bulkImport.useMutation({
     onSuccess: (results) => {
       setImportResults(results)
@@ -73,7 +87,7 @@ export default function ImportPage() {
     try {
       const response = await fetch('https://api.senja.io/v1/testimonials', {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       })
@@ -83,37 +97,61 @@ export default function ImportPage() {
       }
 
       const data = await response.json()
-      
+
       // Map Senja data structure to our format
       // Try multiple possible field structures
-      const testimonials: SenjaTestimonial[] = data.testimonials?.map((t: any) => {
-        return {
-          id: t.id,
-          type: t.type || 'text',
-          text: t.text || '',
-          rating: t.rating || 5,
-          // Try all possible name field locations
-          customerName: t.customer_name || t.customerName || t.name || t.customer?.name || 'Anonymous',
-          // Try all possible email field locations  
-          customerEmail: t.customer_email || t.customerEmail || t.email || t.customer?.email,
-          // Try all possible avatar field locations
-          customerAvatar: t.customer_avatar || t.customerAvatar || t.avatar || t.customer?.avatar,
-          // Try all possible company field locations
-          customerCompany: t.customer_company || t.customerCompany || t.company || t.customer?.company,
-          // Try all possible tagline field locations
-          customerTagline: t.customer_tagline || t.customerTagline || t.tagline || t.customer?.tagline,
-          date: t.date || t.created_at || new Date().toISOString(),
-          approved: t.approved !== false,
-          videoUrl: t.video_url || t.videoUrl || t.video?.url,
-          url: t.url,
-          tags: t.tags || [],
-        }
-      }) || []
+      const testimonials: SenjaTestimonial[] =
+        data.testimonials?.map((t: any) => {
+          return {
+            id: t.id,
+            type: t.type || 'text',
+            text: t.text || '',
+            rating: t.rating || 5,
+            // Try all possible name field locations
+            customerName:
+              t.customer_name ||
+              t.customerName ||
+              t.name ||
+              t.customer?.name ||
+              'Anonymous',
+            // Try all possible email field locations
+            customerEmail:
+              t.customer_email ||
+              t.customerEmail ||
+              t.email ||
+              t.customer?.email,
+            // Try all possible avatar field locations
+            customerAvatar:
+              t.customer_avatar ||
+              t.customerAvatar ||
+              t.avatar ||
+              t.customer?.avatar,
+            // Try all possible company field locations
+            customerCompany:
+              t.customer_company ||
+              t.customerCompany ||
+              t.company ||
+              t.customer?.company,
+            // Try all possible tagline field locations
+            customerTagline:
+              t.customer_tagline ||
+              t.customerTagline ||
+              t.tagline ||
+              t.customer?.tagline,
+            date: t.date || t.created_at || new Date().toISOString(),
+            approved: t.approved !== false,
+            videoUrl: t.video_url || t.videoUrl || t.video?.url,
+            url: t.url,
+            tags: t.tags || [],
+          }
+        }) || []
 
       setSenjaTestimonials(testimonials)
       toast.success(`Found ${testimonials.length} testimonials from Senja`)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to fetch testimonials')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to fetch testimonials'
+      )
     } finally {
       setIsFetching(false)
     }
@@ -131,7 +169,7 @@ export default function ImportPage() {
     }
 
     setIsImporting(true)
-    
+
     // Map Senja testimonials to our format
     const testimonialsToImport = senjaTestimonials.map((t) => ({
       customerName: t.customerName || 'Anonymous',
@@ -141,7 +179,7 @@ export default function ImportPage() {
       content: t.text,
       rating: t.rating || 5,
       videoUrl: t.videoUrl,
-      status: t.approved ? 'approved' as const : 'pending' as const,
+      status: t.approved ? ('approved' as const) : ('pending' as const),
       source: 'import' as const,
       submittedAt: new Date(t.date),
       metadata: {
@@ -204,7 +242,7 @@ export default function ImportPage() {
                     disabled={!apiKey || isFetching || isImporting}
                   >
                     {isFetching ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       'Fetch'
                     )}
@@ -254,12 +292,12 @@ export default function ImportPage() {
                   >
                     {isImporting ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Importing...
                       </>
                     ) : (
                       <>
-                        <Upload className="w-4 h-4 mr-2" />
+                        <Upload className="mr-2 h-4 w-4" />
                         Import All
                       </>
                     )}
@@ -270,31 +308,31 @@ export default function ImportPage() {
                 {isImporting && (
                   <div className="mb-6 space-y-2">
                     <Progress value={importProgress} />
-                    <p className="text-sm text-center text-gray-500">
+                    <p className="text-center text-sm text-gray-500">
                       Importing testimonials... {importProgress}%
                     </p>
                   </div>
                 )}
 
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="max-h-96 space-y-3 overflow-y-auto">
                   {senjaTestimonials.slice(0, 10).map((testimonial) => (
                     <div
                       key={testimonial.id}
-                      className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800"
+                      className="rounded-lg border bg-gray-50 p-3 dark:bg-gray-800"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="mb-2 flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           {testimonial.customerAvatar ? (
                             <img
                               src={testimonial.customerAvatar}
                               alt={testimonial.customerName}
-                              className="w-8 h-8 rounded-full"
+                              className="h-8 w-8 rounded-full"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700" />
+                            <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700" />
                           )}
                           <div>
-                            <p className="font-medium text-sm">
+                            <p className="text-sm font-medium">
                               {testimonial.customerName || 'Anonymous'}
                             </p>
                             {testimonial.customerCompany && (
@@ -318,21 +356,25 @@ export default function ImportPage() {
                           {testimonial.type === 'video' && (
                             <Badge variant="outline">Video</Badge>
                           )}
-                          <Badge variant={testimonial.approved ? 'default' : 'secondary'}>
+                          <Badge
+                            variant={
+                              testimonial.approved ? 'default' : 'secondary'
+                            }
+                          >
                             {testimonial.approved ? 'Approved' : 'Pending'}
                           </Badge>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                      <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                         {testimonial.text}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="mt-1 text-xs text-gray-500">
                         {new Date(testimonial.date).toLocaleDateString()}
                       </p>
                     </div>
                   ))}
                   {senjaTestimonials.length > 10 && (
-                    <p className="text-center text-sm text-gray-500 py-2">
+                    <p className="py-2 text-center text-sm text-gray-500">
                       And {senjaTestimonials.length - 10} more...
                     </p>
                   )}
@@ -346,7 +388,7 @@ export default function ImportPage() {
             <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="h-5 w-5 text-green-600" />
                   Import Complete
                 </CardTitle>
               </CardHeader>

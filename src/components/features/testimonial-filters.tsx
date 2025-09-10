@@ -1,7 +1,13 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Search } from 'lucide-react'
 
 interface TestimonialFiltersProps {
@@ -23,11 +29,13 @@ export function TestimonialFilters({
   onSearchChange,
 }: TestimonialFiltersProps) {
   return (
-    <div className="flex gap-4 mb-6">
+    <div className="mb-6 flex gap-4">
       {/* Form Filter */}
       <Select
         value={selectedForm || 'all'}
-        onValueChange={(value) => onFormChange(value === 'all' ? undefined : value)}
+        onValueChange={(value) =>
+          onFormChange(value === 'all' ? undefined : value)
+        }
       >
         <SelectTrigger className="w-[200px]">
           <SelectValue placeholder="All Forms" />
@@ -43,8 +51,8 @@ export function TestimonialFilters({
       </Select>
 
       {/* Search */}
-      <div className="flex-1 relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
         <Input
           type="search"
           placeholder="Search testimonials..."

@@ -22,8 +22,8 @@ export async function triggerWebhooks(
     })
 
     // Filter integrations that have this trigger enabled
-    const relevantIntegrations = userIntegrations.filter(
-      (integration) => integration.config.triggers?.includes(event)
+    const relevantIntegrations = userIntegrations.filter((integration) =>
+      integration.config.triggers?.includes(event)
     )
 
     if (relevantIntegrations.length === 0) {

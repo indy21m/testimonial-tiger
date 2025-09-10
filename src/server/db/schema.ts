@@ -45,7 +45,7 @@ export const forms = pgTable(
       .notNull()
       .unique()
       .$defaultFn(() => createId()),
-    
+
     // Custom domain support
     customDomain: text('custom_domain').unique(),
     customDomainVerified: boolean('custom_domain_verified').default(false),

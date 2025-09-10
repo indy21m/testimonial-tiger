@@ -222,9 +222,14 @@ export function FormSettingsEditor({
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="email-notification" className="flex items-center gap-2">
+              <Label
+                htmlFor="email-notification"
+                className="flex items-center gap-2"
+              >
                 Email Notifications
-                <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Coming Soon
+                </Badge>
               </Label>
               <p className="text-sm text-gray-500">
                 Receive an email for each new testimonial
@@ -241,7 +246,6 @@ export function FormSettingsEditor({
           </div>
         </CardContent>
       </Card>
-
 
       {/* Advanced Settings */}
       <Card>

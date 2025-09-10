@@ -5,10 +5,24 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { api } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Loader2, Sparkles, Grid3x3, Image, Star, Badge } from 'lucide-react'
+import {
+  ArrowLeft,
+  Loader2,
+  Sparkles,
+  Grid3x3,
+  Image,
+  Star,
+  Badge,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -48,7 +62,9 @@ const widgetTypes = [
 export default function NewWidgetPage() {
   const router = useRouter()
   const [name, setName] = useState('')
-  const [selectedType, setSelectedType] = useState<'wall' | 'carousel' | 'grid' | 'single' | 'badge'>('wall')
+  const [selectedType, setSelectedType] = useState<
+    'wall' | 'carousel' | 'grid' | 'single' | 'badge'
+  >('wall')
   const [isCreating, setIsCreating] = useState(false)
 
   const createMutation = api.widget.create.useMutation({
@@ -85,12 +101,14 @@ export default function NewWidgetPage() {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard/widgets">
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
             <div>
               <h1 className="text-xl font-semibold">Create New Widget</h1>
-              <p className="text-sm text-gray-500">Choose a widget type and customize it</p>
+              <p className="text-sm text-gray-500">
+                Choose a widget type and customize it
+              </p>
             </div>
           </div>
         </div>
@@ -102,7 +120,9 @@ export default function NewWidgetPage() {
           <Card>
             <CardHeader>
               <CardTitle>Widget Name</CardTitle>
-              <CardDescription>Give your widget a descriptive name</CardDescription>
+              <CardDescription>
+                Give your widget a descriptive name
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -122,7 +142,9 @@ export default function NewWidgetPage() {
           <Card>
             <CardHeader>
               <CardTitle>Widget Type</CardTitle>
-              <CardDescription>Select the display format for your testimonials</CardDescription>
+              <CardDescription>
+                Select the display format for your testimonials
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -151,7 +173,9 @@ export default function NewWidgetPage() {
                       </div>
                       <div className="space-y-1">
                         <h3 className="font-medium">{widget.name}</h3>
-                        <p className="text-xs text-gray-500">{widget.description}</p>
+                        <p className="text-xs text-gray-500">
+                          {widget.description}
+                        </p>
                       </div>
                       {selectedType === widget.type && (
                         <div className="absolute right-2 top-2">
@@ -170,7 +194,10 @@ export default function NewWidgetPage() {
             <Button variant="outline" asChild>
               <Link href="/dashboard/widgets">Cancel</Link>
             </Button>
-            <Button onClick={handleCreate} disabled={isCreating || !name.trim()}>
+            <Button
+              onClick={handleCreate}
+              disabled={isCreating || !name.trim()}
+            >
               {isCreating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

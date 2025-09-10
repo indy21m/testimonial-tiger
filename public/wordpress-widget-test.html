@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WordPress Widget Test - Enhanced</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans,
+          Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        background: #f1f1f1;
+      }
+      .test-section {
+        margin: 40px 0;
+        padding: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #23282d;
+      }
+      h2 {
+        color: #0073aa;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+      }
+      pre {
+        background: #f7f7f7;
+        padding: 15px;
+        border: 1px solid #e1e1e1;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-size: 13px;
+      }
+      .success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .warning {
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .widget-container {
+        min-height: 100px;
+        border: 2px dashed #0073aa;
+        padding: 20px;
+        margin: 20px 0;
+        position: relative;
+      }
+      .widget-container::before {
+        content: 'Widget will appear here';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #999;
+        font-size: 14px;
+        pointer-events: none;
+      }
+      .widget-container:not(:empty)::before {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🐅 Testimonial Tiger - WordPress Widget Integration Test</h1>
+
+    <div class="test-section">
+      <h2>✅ Method 1: Standard Embed (Recommended)</h2>
+      <p>
+        This is the standard way to embed the widget. Copy this code to your
+        WordPress page/post in HTML/Text mode:
+      </p>
+      <pre><code>&lt;!-- Testimonial Tiger Widget --&gt;
+&lt;div id="tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d"&gt;&lt;/div&gt;
+&lt;script src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d" async&gt;&lt;/script&gt;</code></pre>
+
+      <div class="widget-container">
+        <div id="tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d"></div>
+      </div>
+      <script
+        src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
+        async
+      ></script>
+    </div>
+
+    <div class="test-section">
+      <h2>🚀 Method 2: Auto-Container (No DIV needed)</h2>
+      <p>
+        The enhanced widget can now create its own container! Just add the
+        script tag:
+      </p>
+      <pre><code>&lt;!-- Just the script tag - container will be created automatically --&gt;
+&lt;script src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d" async&gt;&lt;/script&gt;</code></pre>
+
+      <div class="success">
+        <strong>New Feature:</strong> The widget will automatically create a
+        container DIV before the script tag if one doesn't exist!
+      </div>
+
+      <div class="widget-container" id="auto-container-test">
+        <!-- Container will be created here automatically -->
+      </div>
+      <script>
+        // Simulate missing container scenario
+        document.getElementById('auto-container-test').innerHTML = ''
+      </script>
+      <script
+        src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
+        async
+      ></script>
+    </div>
+
+    <div class="test-section">
+      <h2>⏱️ Method 3: Delayed Loading (For complex WordPress themes)</h2>
+      <p>
+        If your WordPress theme loads content dynamically, use this delayed
+        loading approach:
+      </p>
+      <pre><code>&lt;div id="tt-widget-delayed-96e4fe85-87b7-45e4-9f7c-6f9610cab74d"&gt;&lt;/div&gt;
+&lt;script&gt;
+  // Wait for WordPress to fully load
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      var script = document.createElement('script');
+      script.src = 'https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d';
+      document.body.appendChild(script);
+    }, 1000);
+  });
+&lt;/script&gt;</code></pre>
+
+      <div class="widget-container">
+        <div id="tt-widget-delayed-96e4fe85-87b7-45e4-9f7c-6f9610cab74d"></div>
+      </div>
+      <script>
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            // Create a modified script that targets the delayed container
+            var container = document.getElementById(
+              'tt-widget-delayed-96e4fe85-87b7-45e4-9f7c-6f9610cab74d'
+            )
+            if (container) {
+              container.id = 'tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d'
+              var script = document.createElement('script')
+              script.src =
+                'https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d'
+              document.body.appendChild(script)
+              // Reset ID after a moment
+              setTimeout(function () {
+                container.id =
+                  'tt-widget-delayed-96e4fe85-87b7-45e4-9f7c-6f9610cab74d'
+              }, 2000)
+            }
+          }, 1000)
+        })
+      </script>
+    </div>
+
+    <div class="test-section">
+      <h2>🔧 Method 4: WordPress Shortcode</h2>
+      <p>For easier management, add this to your theme's functions.php:</p>
+      <pre><code>function testimonial_tiger_widget($atts) {
+    $a = shortcode_atts(array(
+        'id' => '96e4fe85-87b7-45e4-9f7c-6f9610cab74d',
+        'type' => 'standard'
+    ), $atts);
+    
+    $widget_id = esc_attr($a['id']);
+    $output = '';
+    
+    if ($a['type'] === 'auto') {
+        // Auto-container version
+        $output = '&lt;script src="https://tiger.zoostack.com/widget/' . $widget_id . '" async&gt;&lt;/script&gt;';
+    } else {
+        // Standard version
+        $output = '&lt;div id="tt-widget-' . $widget_id . '"&gt;&lt;/div&gt;';
+        $output .= '&lt;script src="https://tiger.zoostack.com/widget/' . $widget_id . '" async&gt;&lt;/script&gt;';
+    }
+    
+    return $output;
+}
+add_shortcode('testimonial_tiger', 'testimonial_tiger_widget');</code></pre>
+
+      <p>Then use in WordPress:</p>
+      <pre><code>[testimonial_tiger id="96e4fe85-87b7-45e4-9f7c-6f9610cab74d"]
+[testimonial_tiger id="96e4fe85-87b7-45e4-9f7c-6f9610cab74d" type="auto"]</code></pre>
+    </div>
+
+    <div class="test-section">
+      <h2>🐛 Debugging Information</h2>
+      <div class="warning">
+        <strong
+          >Open your browser console (F12) to see detailed debug
+          messages!</strong
+        >
+      </div>
+
+      <h3>Enhanced Features in This Version:</h3>
+      <ul>
+        <li>
+          ✅ <strong>Auto-container creation:</strong> Widget creates its own
+          container if missing
+        </li>
+        <li>
+          ✅ <strong>MutationObserver:</strong> Watches for dynamic DOM changes
+        </li>
+        <li>
+          ✅ <strong>Multiple selector methods:</strong> Uses getElementById,
+          querySelector, and attribute selectors
+        </li>
+        <li>
+          ✅ <strong>WordPress detection:</strong> Special handling for
+          wp.domReady and jQuery
+        </li>
+        <li>
+          ✅ <strong>Extended retry mechanism:</strong> 30 attempts over 15
+          seconds
+        </li>
+        <li>
+          ✅ <strong>Duplicate prevention:</strong> Won't re-initialize if
+          already loaded
+        </li>
+        <li>
+          ✅ <strong>Better error messages:</strong> Clear console logging with
+          [Testimonial Tiger] prefix
+        </li>
+        <li>
+          ✅ <strong>Memory leak prevention:</strong> Observer disconnects after
+          30 seconds
+        </li>
+      </ul>
+
+      <h3>Common WordPress Issues Solved:</h3>
+      <ul>
+        <li>✅ Container not found due to late DOM rendering</li>
+        <li>✅ Script executing before WordPress is ready</li>
+        <li>✅ Gutenberg blocks loading dynamically</li>
+        <li>✅ Theme JavaScript conflicts</li>
+        <li>✅ jQuery not available immediately</li>
+        <li>✅ Container ID conflicts with other plugins</li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h2>📋 Quick Troubleshooting</h2>
+      <ol>
+        <li>
+          <strong>Widget not showing?</strong> Check browser console for
+          [Testimonial Tiger] messages
+        </li>
+        <li>
+          <strong>Container not found?</strong> Try Method 2 (Auto-container)
+        </li>
+        <li>
+          <strong>Still not working?</strong> Use Method 3 (Delayed loading)
+        </li>
+        <li>
+          <strong>Need help?</strong> Copy all console messages and contact
+          support
+        </li>
+      </ol>
+    </div>
+
+    <script>
+      console.log('[WordPress Test Page] Page loaded')
+      console.log('[WordPress Test Page] Document state:', document.readyState)
+
+      // Monitor widget initialization
+      setTimeout(function () {
+        var containers = document.querySelectorAll('[id*="tt-widget"]')
+        console.log(
+          '[WordPress Test Page] Found',
+          containers.length,
+          'widget containers'
+        )
+        containers.forEach(function (container) {
+          var hasContent =
+            container.children.length > 0 ||
+            container.innerHTML.trim().length > 50
+          console.log(
+            '[WordPress Test Page] Container',
+            container.id,
+            'has content:',
+            hasContent
+          )
+        })
+      }, 5000)
+    </script>
+  </body>
+</html>

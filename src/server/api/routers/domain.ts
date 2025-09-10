@@ -13,7 +13,13 @@ export const domainRouter = createTRPCRouter({
     .input(
       z.object({
         formId: z.string().uuid(),
-        domain: z.string().regex(/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i, 'Invalid domain format').optional(),
+        domain: z
+          .string()
+          .regex(
+            /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i,
+            'Invalid domain format'
+          )
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -47,9 +53,9 @@ export const domainRouter = createTRPCRouter({
       })
 
       if (existingDomain && existingDomain.id !== input.formId) {
-        throw new TRPCError({ 
-          code: 'CONFLICT', 
-          message: 'This domain is already in use by another form' 
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'This domain is already in use by another form',
         })
       }
 
@@ -83,9 +89,9 @@ export const domainRouter = createTRPCRouter({
       }
 
       if (!form.customDomain) {
-        throw new TRPCError({ 
-          code: 'BAD_REQUEST', 
-          message: 'No custom domain set for this form' 
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No custom domain set for this form',
         })
       }
 
@@ -94,10 +100,12 @@ export const domainRouter = createTRPCRouter({
 
       try {
         // Check TXT records for verification
-        const txtRecords = await resolveTxt(`_testimonial-tiger.${form.customDomain}`)
-        
-        const isVerified = txtRecords.some(record => 
-          record.some(text => text === verificationToken)
+        const txtRecords = await resolveTxt(
+          `_testimonial-tiger.${form.customDomain}`
+        )
+
+        const isVerified = txtRecords.some((record) =>
+          record.some((text) => text === verificationToken)
         )
 
         if (!isVerified) {
@@ -125,12 +133,12 @@ export const domainRouter = createTRPCRouter({
           verified: true,
           message: 'Domain verified successfully',
         }
-
       } catch {
         // DNS lookup failed - domain might not exist or no TXT records
         return {
           verified: false,
-          message: 'Could not verify domain. Please ensure DNS records are configured correctly.',
+          message:
+            'Could not verify domain. Please ensure DNS records are configured correctly.',
           instructions: {
             type: 'TXT',
             name: '_testimonial-tiger',

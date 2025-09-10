@@ -37,7 +37,7 @@ export function DashboardNav() {
               className={
                 pathname === item.href
                   ? 'font-medium'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
               }
             >
               {item.label}

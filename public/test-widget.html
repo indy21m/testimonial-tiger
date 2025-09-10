@@ -1,70 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Widget Test</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Testing Testimonial Widget</h1>
-    
+
     <h2>Test 1: Direct Script Tag</h2>
-    <div id="tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d" style="border: 2px solid red; padding: 20px; min-height: 100px;">
-        Widget should load here...
+    <div
+      id="tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
+      style="border: 2px solid red; padding: 20px; min-height: 100px"
+    >
+      Widget should load here...
     </div>
-    
+
     <script>
-        console.log('Page loaded, attempting to load widget...');
-        
-        // First, let's check if the widget endpoint is accessible
-        const widgetUrl = 'https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d';
-        console.log('Widget URL:', widgetUrl);
-        
-        // Test with fetch first
-        fetch(widgetUrl)
-            .then(response => {
-                console.log('Fetch response:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    contentType: response.headers.get('content-type'),
-                    ok: response.ok
-                });
-                return response.text();
-            })
-            .then(text => {
-                console.log('Response text length:', text.length);
-                console.log('First 200 chars:', text.substring(0, 200));
-                
-                // Try to execute the script
-                if (text && text.length > 0) {
-                    console.log('Attempting to execute script...');
-                    try {
-                        eval(text);
-                        console.log('Script executed successfully');
-                    } catch (e) {
-                        console.error('Script execution error:', e);
-                    }
-                } else {
-                    console.error('Empty response received');
-                }
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
-            });
+      console.log('Page loaded, attempting to load widget...')
+
+      // First, let's check if the widget endpoint is accessible
+      const widgetUrl =
+        'https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d'
+      console.log('Widget URL:', widgetUrl)
+
+      // Test with fetch first
+      fetch(widgetUrl)
+        .then((response) => {
+          console.log('Fetch response:', {
+            status: response.status,
+            statusText: response.statusText,
+            contentType: response.headers.get('content-type'),
+            ok: response.ok,
+          })
+          return response.text()
+        })
+        .then((text) => {
+          console.log('Response text length:', text.length)
+          console.log('First 200 chars:', text.substring(0, 200))
+
+          // Try to execute the script
+          if (text && text.length > 0) {
+            console.log('Attempting to execute script...')
+            try {
+              eval(text)
+              console.log('Script executed successfully')
+            } catch (e) {
+              console.error('Script execution error:', e)
+            }
+          } else {
+            console.error('Empty response received')
+          }
+        })
+        .catch((error) => {
+          console.error('Fetch error:', error)
+        })
     </script>
-    
+
     <h2>Test 2: Script Tag with Handlers</h2>
-    <div id="test2" style="border: 2px solid blue; padding: 20px; min-height: 100px;">
-        Testing with script tag...
+    <div
+      id="test2"
+      style="border: 2px solid blue; padding: 20px; min-height: 100px"
+    >
+      Testing with script tag...
     </div>
-    
-    <script 
-        src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
-        onload="console.log('Script tag: loaded successfully')"
-        onerror="console.error('Script tag: failed to load')">
-    </script>
-    
+
+    <script
+      src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
+      onload="console.log('Script tag: loaded successfully')"
+      onerror="console.error('Script tag: failed to load')"
+    ></script>
+
     <h2>Test 3: Check Widget Preview</h2>
-    <p>Widget preview page (should work): <a href="https://tiger.zoostack.com/widget/preview/96e4fe85-87b7-45e4-9f7c-6f9610cab74d" target="_blank">Open Preview</a></p>
-</body>
+    <p>
+      Widget preview page (should work):
+      <a
+        href="https://tiger.zoostack.com/widget/preview/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
+        target="_blank"
+        >Open Preview</a
+      >
+    </p>
+  </body>
 </html>

@@ -5,14 +5,36 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Save, Monitor, Smartphone, Eye, GripVertical, Upload, X, Code } from 'lucide-react'
+import {
+  ArrowLeft,
+  Save,
+  Monitor,
+  Smartphone,
+  Eye,
+  GripVertical,
+  Upload,
+  X,
+  Code,
+} from 'lucide-react'
 import { getWidgetEmbedCode } from '@/lib/utils/widget-url'
 import { toast } from 'sonner'
 import { debounce } from 'lodash'
@@ -35,24 +57,21 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import {
-  useSortable,
-} from '@dnd-kit/sortable'
+import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
 // Sortable testimonial item component
-function SortableTestimonialItem({ testimonial, isSelected, onToggle }: {
+function SortableTestimonialItem({
+  testimonial,
+  isSelected,
+  onToggle,
+}: {
   testimonial: any
   isSelected: boolean
   onToggle: () => void
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: testimonial.id })
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: testimonial.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -63,23 +82,18 @@ function SortableTestimonialItem({ testimonial, isSelected, onToggle }: {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-3 border rounded-lg bg-white dark:bg-gray-800"
+      className="flex items-center gap-3 rounded-lg border bg-white p-3 dark:bg-gray-800"
     >
       <div {...attributes} {...listeners} className="cursor-move">
-        <GripVertical className="w-4 h-4 text-gray-400" />
+        <GripVertical className="h-4 w-4 text-gray-400" />
       </div>
-      <Checkbox
-        checked={isSelected}
-        onCheckedChange={onToggle}
-      />
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm">{testimonial.customerName}</p>
-        <p className="text-xs text-gray-500 truncate">{testimonial.content}</p>
+      <Checkbox checked={isSelected} onCheckedChange={onToggle} />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{testimonial.customerName}</p>
+        <p className="truncate text-xs text-gray-500">{testimonial.content}</p>
       </div>
       {testimonial.rating && (
-        <div className="text-xs text-yellow-500">
-          {testimonial.rating}★
-        </div>
+        <div className="text-xs text-yellow-500">{testimonial.rating}★</div>
       )}
     </div>
   )
@@ -89,11 +103,15 @@ export default function WidgetEditorPage() {
   const params = useParams()
   const router = useRouter()
   const widgetId = params.id as string
-  
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
+
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>(
+    'desktop'
+  )
   const [activeTab, setActiveTab] = useState('testimonials')
   const [embedCodeCopied, setEmbedCodeCopied] = useState(false)
-  const [selectedTestimonialIds, setSelectedTestimonialIds] = useState<string[]>([])
+  const [selectedTestimonialIds, setSelectedTestimonialIds] = useState<
+    string[]
+  >([])
   const [testimonialOrder, setTestimonialOrder] = useState<string[]>([])
   const [truncateLength, setTruncateLength] = useState(200)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
@@ -101,8 +119,10 @@ export default function WidgetEditorPage() {
 
   const { data: widget, refetch } = api.widget.get.useQuery({ id: widgetId })
   const { data: forms } = api.form.list.useQuery()
-  const { data: allTestimonials, refetch: refetchAllTestimonials } = api.widget.getAllTestimonials.useQuery({ widgetId })
-  const { refetch: refetchFilteredTestimonials } = api.widget.getTestimonials.useQuery({ widgetId })
+  const { data: allTestimonials, refetch: refetchAllTestimonials } =
+    api.widget.getAllTestimonials.useQuery({ widgetId })
+  const { refetch: refetchFilteredTestimonials } =
+    api.widget.getTestimonials.useQuery({ widgetId })
   const utils = api.useUtils()
 
   const updateMutation = api.widget.update.useMutation({
@@ -122,45 +142,52 @@ export default function WidgetEditorPage() {
 
   // Debounced update for smooth editing experience
   const debouncedUpdate = useMemo(
-    () => debounce((updates: any) => {
-      updateMutation.mutate({ id: widgetId, ...updates })
-    }, 500),
+    () =>
+      debounce((updates: any) => {
+        updateMutation.mutate({ id: widgetId, ...updates })
+      }, 500),
     [widgetId]
   )
 
-  const handleConfigUpdate = useCallback((path: string[], value: any, immediate: boolean = false) => {
-    if (!widget) return
+  const handleConfigUpdate = useCallback(
+    (path: string[], value: any, immediate: boolean = false) => {
+      if (!widget) return
 
-    const newConfig = { ...widget.config }
-    let current: any = newConfig
-    
-    for (let i = 0; i < path.length - 1; i++) {
-      const key = path[i]
-      if (key !== undefined) {
-        current = current[key]
+      const newConfig = { ...widget.config }
+      let current: any = newConfig
+
+      for (let i = 0; i < path.length - 1; i++) {
+        const key = path[i]
+        if (key !== undefined) {
+          current = current[key]
+        }
       }
-    }
-    
-    const lastKey = path[path.length - 1]
-    if (lastKey !== undefined) {
-      current[lastKey] = value
-    }
 
-    if (immediate) {
-      updateMutation.mutate({ id: widgetId, config: newConfig })
-    } else {
-      debouncedUpdate({ config: newConfig })
-    }
-  }, [widget, debouncedUpdate, widgetId])
+      const lastKey = path[path.length - 1]
+      if (lastKey !== undefined) {
+        current[lastKey] = value
+      }
 
-  const handleDomainsUpdate = useCallback((domains: string) => {
-    const domainList = domains
-      .split('\n')
-      .map(d => d.trim())
-      .filter(d => d.length > 0)
-    
-    debouncedUpdate({ allowedDomains: domainList })
-  }, [debouncedUpdate])
+      if (immediate) {
+        updateMutation.mutate({ id: widgetId, config: newConfig })
+      } else {
+        debouncedUpdate({ config: newConfig })
+      }
+    },
+    [widget, debouncedUpdate, widgetId]
+  )
+
+  const handleDomainsUpdate = useCallback(
+    (domains: string) => {
+      const domainList = domains
+        .split('\n')
+        .map((d) => d.trim())
+        .filter((d) => d.length > 0)
+
+      debouncedUpdate({ allowedDomains: domainList })
+    },
+    [debouncedUpdate]
+  )
 
   // Initialize selected testimonials and order from widget config
   useEffect(() => {
@@ -171,7 +198,7 @@ export default function WidgetEditorPage() {
       setTestimonialOrder(widget.config.filters.testimonialOrder)
     } else if (allTestimonials) {
       // Initialize order with all testimonials if not set
-      setTestimonialOrder(allTestimonials.map(t => t.id))
+      setTestimonialOrder(allTestimonials.map((t) => t.id))
     }
     // Initialize truncate length
     if (widget?.config.display.truncateLength) {
@@ -195,89 +222,96 @@ export default function WidgetEditorPage() {
         const oldIndex = items.indexOf(active.id as string)
         const newIndex = items.indexOf(over.id as string)
         const newOrder = arrayMove(items, oldIndex, newIndex)
-        
+
         // Update widget config, preserving selectedTestimonialIds
-        debouncedUpdate({ 
+        debouncedUpdate({
           config: {
             ...widget!.config,
             filters: {
               ...widget!.config.filters,
               selectedTestimonialIds: selectedTestimonialIds,
-              testimonialOrder: newOrder
-            }
-          }
+              testimonialOrder: newOrder,
+            },
+          },
         })
-        
+
         return newOrder
       })
     }
   }
 
   const toggleTestimonial = (testimonialId: string) => {
-    setSelectedTestimonialIds(prev => {
+    setSelectedTestimonialIds((prev) => {
       const newIds = prev.includes(testimonialId)
-        ? prev.filter(id => id !== testimonialId)
+        ? prev.filter((id) => id !== testimonialId)
         : [...prev, testimonialId]
-      
+
       // Update widget config
-      debouncedUpdate({ 
+      debouncedUpdate({
         config: {
           ...widget!.config,
           filters: {
             ...widget!.config.filters,
             selectedTestimonialIds: newIds,
-            testimonialOrder: testimonialOrder
-          }
-        }
+            testimonialOrder: testimonialOrder,
+          },
+        },
       })
-      
+
       return newIds
     })
-    
+
     // Add to order if not present
     if (!testimonialOrder.includes(testimonialId)) {
-      setTestimonialOrder(prev => [...prev, testimonialId])
+      setTestimonialOrder((prev) => [...prev, testimonialId])
     }
   }
 
   const toggleAll = () => {
     if (!allTestimonials) return
-    
+
     const allSelected = selectedTestimonialIds.length === allTestimonials.length
-    const newIds = allSelected ? [] : allTestimonials.map(t => t.id)
-    
+    const newIds = allSelected ? [] : allTestimonials.map((t) => t.id)
+
     setSelectedTestimonialIds(newIds)
-    
+
     // Update order to include all testimonials if selecting all
     if (!allSelected) {
       const currentOrder = testimonialOrder
-      const missingIds = newIds.filter(id => !currentOrder.includes(id))
+      const missingIds = newIds.filter((id) => !currentOrder.includes(id))
       setTestimonialOrder([...currentOrder, ...missingIds])
     }
-    
-    debouncedUpdate({ 
+
+    debouncedUpdate({
       config: {
         ...widget!.config,
         filters: {
           ...widget!.config.filters,
           selectedTestimonialIds: newIds,
-          testimonialOrder: allSelected ? testimonialOrder : [...testimonialOrder, ...newIds.filter(id => !testimonialOrder.includes(id))]
-        }
-      }
+          testimonialOrder: allSelected
+            ? testimonialOrder
+            : [
+                ...testimonialOrder,
+                ...newIds.filter((id) => !testimonialOrder.includes(id)),
+              ],
+        },
+      },
     })
   }
 
   const copyEmbedCode = () => {
     const embedCode = getWidgetEmbedCode(widgetId)
-    
+
     navigator.clipboard.writeText(embedCode)
     setEmbedCodeCopied(true)
     toast.success('Embed code copied to clipboard')
-    
+
     setTimeout(() => setEmbedCodeCopied(false), 2000)
   }
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -301,11 +335,15 @@ export default function WidgetEditorPage() {
       })
 
       // Update widget config with uploaded avatar URL
-      handleConfigUpdate(['styling', 'fallbackAvatar'], {
-        ...widget!.config.styling.fallbackAvatar,
-        type: 'placeholder',
-        placeholderUrl: blob.url
-      }, true)
+      handleConfigUpdate(
+        ['styling', 'fallbackAvatar'],
+        {
+          ...widget!.config.styling.fallbackAvatar,
+          type: 'placeholder',
+          placeholderUrl: blob.url,
+        },
+        true
+      )
 
       toast.success('Avatar uploaded successfully')
     } catch (error) {
@@ -321,8 +359,8 @@ export default function WidgetEditorPage() {
 
   if (!widget) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
       </div>
     )
   }
@@ -335,23 +373,37 @@ export default function WidgetEditorPage() {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard/widgets">
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
             <div>
               <h1 className="text-xl font-semibold">{widget.name}</h1>
-              <p className="text-sm text-gray-500">Customize your widget appearance and behavior</p>
+              <p className="text-sm text-gray-500">
+                Customize your widget appearance and behavior
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setPreviewDevice('desktop')}>
-              <Monitor className={`w-4 h-4 ${previewDevice === 'desktop' ? 'text-primary' : ''}`} />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setPreviewDevice('desktop')}
+            >
+              <Monitor
+                className={`h-4 w-4 ${previewDevice === 'desktop' ? 'text-primary' : ''}`}
+              />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setPreviewDevice('mobile')}>
-              <Smartphone className={`w-4 h-4 ${previewDevice === 'mobile' ? 'text-primary' : ''}`} />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setPreviewDevice('mobile')}
+            >
+              <Smartphone
+                className={`h-4 w-4 ${previewDevice === 'mobile' ? 'text-primary' : ''}`}
+              />
             </Button>
             <Button onClick={() => router.push('/dashboard/widgets')}>
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="mr-2 h-4 w-4" />
               Save & Close
             </Button>
           </div>
@@ -360,37 +412,53 @@ export default function WidgetEditorPage() {
 
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Settings Panel */}
-        <div className="w-96 border-r bg-white dark:bg-gray-800 overflow-y-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+        <div className="w-96 overflow-y-auto border-r bg-white dark:bg-gray-800">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="h-full"
+          >
             <TabsList className="w-full rounded-none border-b">
-              <TabsTrigger value="testimonials" className="flex-1">Testimonials</TabsTrigger>
-              <TabsTrigger value="display" className="flex-1">Display</TabsTrigger>
-              <TabsTrigger value="filters" className="flex-1">Filters</TabsTrigger>
-              <TabsTrigger value="styling" className="flex-1">Styling</TabsTrigger>
-              <TabsTrigger value="embed" className="flex-1">Embed</TabsTrigger>
+              <TabsTrigger value="testimonials" className="flex-1">
+                Testimonials
+              </TabsTrigger>
+              <TabsTrigger value="display" className="flex-1">
+                Display
+              </TabsTrigger>
+              <TabsTrigger value="filters" className="flex-1">
+                Filters
+              </TabsTrigger>
+              <TabsTrigger value="styling" className="flex-1">
+                Styling
+              </TabsTrigger>
+              <TabsTrigger value="embed" className="flex-1">
+                Embed
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="testimonials" className="p-6 space-y-6">
+            <TabsContent value="testimonials" className="space-y-6 p-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Select Testimonials</CardTitle>
-                  <CardDescription>Choose which testimonials to display and set their order</CardDescription>
+                  <CardDescription>
+                    Choose which testimonials to display and set their order
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between pb-4 border-b">
+                    <div className="flex items-center justify-between border-b pb-4">
                       <Label>
-                        {selectedTestimonialIds.length} of {allTestimonials?.length || 0} selected
+                        {selectedTestimonialIds.length} of{' '}
+                        {allTestimonials?.length || 0} selected
                       </Label>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleAll}
-                      >
-                        {selectedTestimonialIds.length === allTestimonials?.length ? 'Deselect All' : 'Select All'}
+                      <Button variant="outline" size="sm" onClick={toggleAll}>
+                        {selectedTestimonialIds.length ===
+                        allTestimonials?.length
+                          ? 'Deselect All'
+                          : 'Select All'}
                       </Button>
                     </div>
-                    
+
                     {allTestimonials && allTestimonials.length > 0 ? (
                       <DndContext
                         sensors={sensors}
@@ -401,24 +469,31 @@ export default function WidgetEditorPage() {
                           items={testimonialOrder}
                           strategy={verticalListSortingStrategy}
                         >
-                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                          <div className="max-h-96 space-y-2 overflow-y-auto">
                             {testimonialOrder
-                              .map(id => allTestimonials.find(t => t.id === id))
+                              .map((id) =>
+                                allTestimonials.find((t) => t.id === id)
+                              )
                               .filter(Boolean)
                               .map((testimonial) => (
                                 <SortableTestimonialItem
                                   key={testimonial!.id}
                                   testimonial={testimonial}
-                                  isSelected={selectedTestimonialIds.includes(testimonial!.id)}
-                                  onToggle={() => toggleTestimonial(testimonial!.id)}
+                                  isSelected={selectedTestimonialIds.includes(
+                                    testimonial!.id
+                                  )}
+                                  onToggle={() =>
+                                    toggleTestimonial(testimonial!.id)
+                                  }
                                 />
                               ))}
                           </div>
                         </SortableContext>
                       </DndContext>
                     ) : (
-                      <p className="text-sm text-gray-500 text-center py-8">
-                        No testimonials available. Add testimonials to your forms first.
+                      <p className="py-8 text-center text-sm text-gray-500">
+                        No testimonials available. Add testimonials to your
+                        forms first.
                       </p>
                     )}
                   </div>
@@ -426,11 +501,13 @@ export default function WidgetEditorPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="display" className="p-6 space-y-6">
+            <TabsContent value="display" className="space-y-6 p-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Content Display</CardTitle>
-                  <CardDescription>Choose what information to show</CardDescription>
+                  <CardDescription>
+                    Choose what information to show
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -438,7 +515,9 @@ export default function WidgetEditorPage() {
                     <Switch
                       id="show-rating"
                       checked={widget.config.display.showRating}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showRating'], checked)}
+                      onCheckedChange={(checked) =>
+                        handleConfigUpdate(['display', 'showRating'], checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -446,7 +525,9 @@ export default function WidgetEditorPage() {
                     <Switch
                       id="show-photo"
                       checked={widget.config.display.showPhoto}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showPhoto'], checked)}
+                      onCheckedChange={(checked) =>
+                        handleConfigUpdate(['display', 'showPhoto'], checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -454,7 +535,9 @@ export default function WidgetEditorPage() {
                     <Switch
                       id="show-company"
                       checked={widget.config.display.showCompany}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showCompany'], checked)}
+                      onCheckedChange={(checked) =>
+                        handleConfigUpdate(['display', 'showCompany'], checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -462,7 +545,9 @@ export default function WidgetEditorPage() {
                     <Switch
                       id="show-date"
                       checked={widget.config.display.showDate}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showDate'], checked)}
+                      onCheckedChange={(checked) =>
+                        handleConfigUpdate(['display', 'showDate'], checked)
+                      }
                     />
                   </div>
                 </CardContent>
@@ -471,7 +556,9 @@ export default function WidgetEditorPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Text Settings</CardTitle>
-                  <CardDescription>Configure text display options</CardDescription>
+                  <CardDescription>
+                    Configure text display options
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -482,7 +569,8 @@ export default function WidgetEditorPage() {
                         type="number"
                         value={truncateLength}
                         onChange={(e) => {
-                          const value = e.target.value === '' ? 0 : parseInt(e.target.value)
+                          const value =
+                            e.target.value === '' ? 0 : parseInt(e.target.value)
                           if (!isNaN(value)) {
                             setTruncateLength(value)
                           }
@@ -490,7 +578,11 @@ export default function WidgetEditorPage() {
                         onBlur={(e) => {
                           const value = parseInt(e.target.value) || 200
                           setTruncateLength(value)
-                          handleConfigUpdate(['display', 'truncateLength'], value, true)
+                          handleConfigUpdate(
+                            ['display', 'truncateLength'],
+                            value,
+                            true
+                          )
                         }}
                         min="50"
                         max="500"
@@ -498,14 +590,20 @@ export default function WidgetEditorPage() {
                       />
                       <span className="text-sm text-gray-500">characters</span>
                     </div>
-                    <p className="text-xs text-gray-500">Number of characters before truncation</p>
+                    <p className="text-xs text-gray-500">
+                      Number of characters before truncation
+                    </p>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="show-read-more">Show Read More Button</Label>
+                    <Label htmlFor="show-read-more">
+                      Show Read More Button
+                    </Label>
                     <Switch
                       id="show-read-more"
                       checked={widget.config.display.showReadMore ?? true}
-                      onCheckedChange={(checked) => handleConfigUpdate(['display', 'showReadMore'], checked)}
+                      onCheckedChange={(checked) =>
+                        handleConfigUpdate(['display', 'showReadMore'], checked)
+                      }
                     />
                   </div>
                 </CardContent>
@@ -519,16 +617,21 @@ export default function WidgetEditorPage() {
                   <CardContent>
                     <div>
                       <Label>Items Per Page</Label>
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="mt-2 flex items-center gap-2">
                         <Slider
                           value={[widget.config.display.itemsPerPage || 9]}
-                          onValueChange={([value]) => handleConfigUpdate(['display', 'itemsPerPage'], value)}
+                          onValueChange={([value]) =>
+                            handleConfigUpdate(
+                              ['display', 'itemsPerPage'],
+                              value
+                            )
+                          }
                           min={1}
                           max={20}
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-sm w-12 text-right">
+                        <span className="w-12 text-right text-sm">
                           {widget.config.display.itemsPerPage || 9}
                         </span>
                       </div>
@@ -538,11 +641,13 @@ export default function WidgetEditorPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="filters" className="p-6 space-y-6">
+            <TabsContent value="filters" className="space-y-6 p-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Content Filters</CardTitle>
-                  <CardDescription>Control which testimonials appear</CardDescription>
+                  <CardDescription>
+                    Control which testimonials appear
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -550,37 +655,43 @@ export default function WidgetEditorPage() {
                     <Switch
                       id="only-featured"
                       checked={widget.config.filters.onlyFeatured}
-                      onCheckedChange={(checked) => handleConfigUpdate(['filters', 'onlyFeatured'], checked)}
+                      onCheckedChange={(checked) =>
+                        handleConfigUpdate(['filters', 'onlyFeatured'], checked)
+                      }
                     />
                   </div>
                   <div>
                     <Label>Minimum Rating</Label>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="mt-2 flex items-center gap-2">
                       <Slider
                         value={[widget.config.filters.minRating || 1]}
-                        onValueChange={([value]) => handleConfigUpdate(['filters', 'minRating'], value)}
+                        onValueChange={([value]) =>
+                          handleConfigUpdate(['filters', 'minRating'], value)
+                        }
                         min={1}
                         max={5}
                         step={1}
                         className="flex-1"
                       />
-                      <span className="text-sm w-12 text-right">
+                      <span className="w-12 text-right text-sm">
                         {widget.config.filters.minRating || 1}★
                       </span>
                     </div>
                   </div>
                   <div>
                     <Label>Maximum Items</Label>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="mt-2 flex items-center gap-2">
                       <Slider
                         value={[widget.config.filters.maxItems || 20]}
-                        onValueChange={([value]) => handleConfigUpdate(['filters', 'maxItems'], value)}
+                        onValueChange={([value]) =>
+                          handleConfigUpdate(['filters', 'maxItems'], value)
+                        }
                         min={1}
                         max={50}
                         step={1}
                         className="flex-1"
                       />
-                      <span className="text-sm w-12 text-right">
+                      <span className="w-12 text-right text-sm">
                         {widget.config.filters.maxItems || 20}
                       </span>
                     </div>
@@ -591,7 +702,9 @@ export default function WidgetEditorPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Form Selection</CardTitle>
-                  <CardDescription>Choose which forms to include</CardDescription>
+                  <CardDescription>
+                    Choose which forms to include
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -599,17 +712,29 @@ export default function WidgetEditorPage() {
                       <div key={form.id} className="flex items-center gap-2">
                         <Checkbox
                           id={`form-${form.id}`}
-                          checked={widget.config.filters.formIds?.includes(form.id) || false}
+                          checked={
+                            widget.config.filters.formIds?.includes(form.id) ||
+                            false
+                          }
                           onCheckedChange={(checked) => {
                             const formIds = widget.config.filters.formIds || []
                             if (checked) {
-                              handleConfigUpdate(['filters', 'formIds'], [...formIds, form.id])
+                              handleConfigUpdate(
+                                ['filters', 'formIds'],
+                                [...formIds, form.id]
+                              )
                             } else {
-                              handleConfigUpdate(['filters', 'formIds'], formIds.filter(id => id !== form.id))
+                              handleConfigUpdate(
+                                ['filters', 'formIds'],
+                                formIds.filter((id) => id !== form.id)
+                              )
                             }
                           }}
                         />
-                        <Label htmlFor={`form-${form.id}`} className="font-normal cursor-pointer">
+                        <Label
+                          htmlFor={`form-${form.id}`}
+                          className="cursor-pointer font-normal"
+                        >
                           {form.name}
                         </Label>
                       </div>
@@ -619,7 +744,7 @@ export default function WidgetEditorPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="styling" className="p-6 space-y-6">
+            <TabsContent value="styling" className="space-y-6 p-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Theme</CardTitle>
@@ -629,7 +754,9 @@ export default function WidgetEditorPage() {
                     <Label>Theme Mode</Label>
                     <Select
                       value={widget.config.styling.theme}
-                      onValueChange={(value: any) => handleConfigUpdate(['styling', 'theme'], value)}
+                      onValueChange={(value: any) =>
+                        handleConfigUpdate(['styling', 'theme'], value)
+                      }
                     >
                       <SelectTrigger className="mt-2">
                         <SelectValue />
@@ -646,46 +773,76 @@ export default function WidgetEditorPage() {
                     <>
                       <div>
                         <Label>Primary Color</Label>
-                        <div className="flex gap-2 mt-2">
+                        <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
                             value={widget.config.styling.primaryColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'primaryColor'], e.target.value)}
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'primaryColor'],
+                                e.target.value
+                              )
+                            }
                             className="w-20"
                           />
                           <Input
                             value={widget.config.styling.primaryColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'primaryColor'], e.target.value)}
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'primaryColor'],
+                                e.target.value
+                              )
+                            }
                           />
                         </div>
                       </div>
                       <div>
                         <Label>Background Color</Label>
-                        <div className="flex gap-2 mt-2">
+                        <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
                             value={widget.config.styling.backgroundColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'backgroundColor'], e.target.value)}
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'backgroundColor'],
+                                e.target.value
+                              )
+                            }
                             className="w-20"
                           />
                           <Input
                             value={widget.config.styling.backgroundColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'backgroundColor'], e.target.value)}
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'backgroundColor'],
+                                e.target.value
+                              )
+                            }
                           />
                         </div>
                       </div>
                       <div>
                         <Label>Text Color</Label>
-                        <div className="flex gap-2 mt-2">
+                        <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
                             value={widget.config.styling.textColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'textColor'], e.target.value)}
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'textColor'],
+                                e.target.value
+                              )
+                            }
                             className="w-20"
                           />
                           <Input
                             value={widget.config.styling.textColor}
-                            onChange={(e) => handleConfigUpdate(['styling', 'textColor'], e.target.value)}
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'textColor'],
+                                e.target.value
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -703,7 +860,9 @@ export default function WidgetEditorPage() {
                     <Label>Density</Label>
                     <Select
                       value={widget.config.styling.layout}
-                      onValueChange={(value: any) => handleConfigUpdate(['styling', 'layout'], value)}
+                      onValueChange={(value: any) =>
+                        handleConfigUpdate(['styling', 'layout'], value)
+                      }
                     >
                       <SelectTrigger className="mt-2">
                         <SelectValue />
@@ -719,7 +878,9 @@ export default function WidgetEditorPage() {
                     <Label>Shadow</Label>
                     <Select
                       value={widget.config.styling.shadow}
-                      onValueChange={(value: any) => handleConfigUpdate(['styling', 'shadow'], value)}
+                      onValueChange={(value: any) =>
+                        handleConfigUpdate(['styling', 'shadow'], value)
+                      }
                     >
                       <SelectTrigger className="mt-2">
                         <SelectValue />
@@ -736,7 +897,12 @@ export default function WidgetEditorPage() {
                     <Label>Border Radius</Label>
                     <Input
                       value={widget.config.styling.borderRadius}
-                      onChange={(e) => handleConfigUpdate(['styling', 'borderRadius'], e.target.value)}
+                      onChange={(e) =>
+                        handleConfigUpdate(
+                          ['styling', 'borderRadius'],
+                          e.target.value
+                        )
+                      }
                       placeholder="e.g., 0.5rem, 8px"
                       className="mt-2"
                     />
@@ -747,17 +913,21 @@ export default function WidgetEditorPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Fallback Avatar</CardTitle>
-                  <CardDescription>Display options when customer photo is not available</CardDescription>
+                  <CardDescription>
+                    Display options when customer photo is not available
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
                     <Label>Avatar Type</Label>
                     <Select
-                      value={widget.config.styling.fallbackAvatar?.type || 'initials'}
-                      onValueChange={(value: 'initials' | 'placeholder') => 
+                      value={
+                        widget.config.styling.fallbackAvatar?.type || 'initials'
+                      }
+                      onValueChange={(value: 'initials' | 'placeholder') =>
                         handleConfigUpdate(['styling', 'fallbackAvatar'], {
                           ...widget.config.styling.fallbackAvatar,
-                          type: value
+                          type: value,
                         })
                       }
                     >
@@ -765,60 +935,89 @@ export default function WidgetEditorPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="initials">Customer Initials</SelectItem>
-                        <SelectItem value="placeholder">Placeholder Image</SelectItem>
+                        <SelectItem value="initials">
+                          Customer Initials
+                        </SelectItem>
+                        <SelectItem value="placeholder">
+                          Placeholder Image
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {widget.config.styling.fallbackAvatar?.type === 'initials' && (
+                  {widget.config.styling.fallbackAvatar?.type ===
+                    'initials' && (
                     <>
                       <div>
                         <Label>Background Color</Label>
-                        <div className="flex gap-2 mt-2">
+                        <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
-                            value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
-                            onChange={(e) => 
-                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                ...widget.config.styling.fallbackAvatar,
-                                backgroundColor: e.target.value
-                              })
+                            value={
+                              widget.config.styling.fallbackAvatar
+                                ?.backgroundColor || '#3b82f6'
+                            }
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'fallbackAvatar'],
+                                {
+                                  ...widget.config.styling.fallbackAvatar,
+                                  backgroundColor: e.target.value,
+                                }
+                              )
                             }
                             className="w-20"
                           />
                           <Input
-                            value={widget.config.styling.fallbackAvatar?.backgroundColor || '#3b82f6'}
-                            onChange={(e) => 
-                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                ...widget.config.styling.fallbackAvatar,
-                                backgroundColor: e.target.value
-                              })
+                            value={
+                              widget.config.styling.fallbackAvatar
+                                ?.backgroundColor || '#3b82f6'
+                            }
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'fallbackAvatar'],
+                                {
+                                  ...widget.config.styling.fallbackAvatar,
+                                  backgroundColor: e.target.value,
+                                }
+                              )
                             }
                           />
                         </div>
                       </div>
                       <div>
                         <Label>Text Color</Label>
-                        <div className="flex gap-2 mt-2">
+                        <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
-                            value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
-                            onChange={(e) => 
-                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                ...widget.config.styling.fallbackAvatar,
-                                textColor: e.target.value
-                              })
+                            value={
+                              widget.config.styling.fallbackAvatar?.textColor ||
+                              '#FFFFFF'
+                            }
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'fallbackAvatar'],
+                                {
+                                  ...widget.config.styling.fallbackAvatar,
+                                  textColor: e.target.value,
+                                }
+                              )
                             }
                             className="w-20"
                           />
                           <Input
-                            value={widget.config.styling.fallbackAvatar?.textColor || '#FFFFFF'}
-                            onChange={(e) => 
-                              handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                ...widget.config.styling.fallbackAvatar,
-                                textColor: e.target.value
-                              })
+                            value={
+                              widget.config.styling.fallbackAvatar?.textColor ||
+                              '#FFFFFF'
+                            }
+                            onChange={(e) =>
+                              handleConfigUpdate(
+                                ['styling', 'fallbackAvatar'],
+                                {
+                                  ...widget.config.styling.fallbackAvatar,
+                                  textColor: e.target.value,
+                                }
+                              )
                             }
                           />
                         </div>
@@ -826,7 +1025,8 @@ export default function WidgetEditorPage() {
                     </>
                   )}
 
-                  {widget.config.styling.fallbackAvatar?.type === 'placeholder' && (
+                  {widget.config.styling.fallbackAvatar?.type ===
+                    'placeholder' && (
                     <div className="space-y-3">
                       <div>
                         <Label>Upload Placeholder Image</Label>
@@ -847,64 +1047,76 @@ export default function WidgetEditorPage() {
                           >
                             {isUploadingAvatar ? (
                               <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-primary" />
                                 Uploading...
                               </>
                             ) : (
                               <>
-                                <Upload className="w-4 h-4 mr-2" />
+                                <Upload className="mr-2 h-4 w-4" />
                                 Upload Image
                               </>
                             )}
                           </Button>
                         </div>
                       </div>
-                      
+
                       {widget.config.styling.fallbackAvatar?.placeholderUrl && (
                         <div className="space-y-2">
                           <Label>Current Placeholder</Label>
-                          <div className="flex items-center gap-3 p-3 border rounded-lg">
+                          <div className="flex items-center gap-3 rounded-lg border p-3">
                             <img
-                              src={widget.config.styling.fallbackAvatar.placeholderUrl}
+                              src={
+                                widget.config.styling.fallbackAvatar
+                                  .placeholderUrl
+                              }
                               alt="Placeholder avatar"
-                              className="w-10 h-10 rounded-full object-cover"
+                              className="h-10 w-10 rounded-full object-cover"
                             />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-600 truncate">
-                                {widget.config.styling.fallbackAvatar.placeholderUrl.split('/').pop()}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm text-gray-600">
+                                {widget.config.styling.fallbackAvatar.placeholderUrl
+                                  .split('/')
+                                  .pop()}
                               </p>
                             </div>
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => 
-                                handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                                  ...widget.config.styling.fallbackAvatar,
-                                  placeholderUrl: ''
-                                }, true)
+                              onClick={() =>
+                                handleConfigUpdate(
+                                  ['styling', 'fallbackAvatar'],
+                                  {
+                                    ...widget.config.styling.fallbackAvatar,
+                                    placeholderUrl: '',
+                                  },
+                                  true
+                                )
                               }
                             >
-                              <X className="w-4 h-4" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
                       )}
-                      
+
                       <div>
                         <Label>Or Use Image URL</Label>
                         <Input
-                          value={widget.config.styling.fallbackAvatar?.placeholderUrl || ''}
-                          onChange={(e) => 
+                          value={
+                            widget.config.styling.fallbackAvatar
+                              ?.placeholderUrl || ''
+                          }
+                          onChange={(e) =>
                             handleConfigUpdate(['styling', 'fallbackAvatar'], {
                               ...widget.config.styling.fallbackAvatar,
-                              placeholderUrl: e.target.value
+                              placeholderUrl: e.target.value,
                             })
                           }
                           placeholder="https://example.com/placeholder.png"
                           className="mt-2"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="mt-1 text-xs text-gray-500">
                           Provide a URL to a placeholder image
                         </p>
                       </div>
@@ -914,24 +1126,26 @@ export default function WidgetEditorPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="embed" className="p-6 space-y-6">
+            <TabsContent value="embed" className="space-y-6 p-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Embed Code</CardTitle>
-                  <CardDescription>Copy this code to add the widget to your website</CardDescription>
+                  <CardDescription>
+                    Copy this code to add the widget to your website
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto">
-                    <pre className="text-xs font-mono whitespace-pre-wrap break-all">
-{getWidgetEmbedCode(widgetId)}
+                  <div className="overflow-x-auto rounded-lg bg-gray-100 p-4 dark:bg-gray-900">
+                    <pre className="whitespace-pre-wrap break-all font-mono text-xs">
+                      {getWidgetEmbedCode(widgetId)}
                     </pre>
                   </div>
-                  <Button 
-                    className="w-full mt-4" 
+                  <Button
+                    className="mt-4 w-full"
                     onClick={copyEmbedCode}
                     variant={embedCodeCopied ? 'default' : 'outline'}
                   >
-                    <Code className="w-4 h-4 mr-2" />
+                    <Code className="mr-2 h-4 w-4" />
                     {embedCodeCopied ? 'Copied!' : 'Copy Embed Code'}
                   </Button>
                 </CardContent>
@@ -953,7 +1167,7 @@ subdomain.example.com"
                     onChange={(e) => handleDomainsUpdate(e.target.value)}
                     rows={5}
                   />
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="mt-2 text-xs text-gray-500">
                     Leave empty to allow all domains
                   </p>
                 </CardContent>
@@ -963,21 +1177,24 @@ subdomain.example.com"
         </div>
 
         {/* Preview Panel */}
-        <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950 p-8">
-          <div className="mx-auto transition-all duration-300" style={{
-            maxWidth: previewDevice === 'mobile' ? '375px' : '100%',
-          }}>
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
+        <div className="flex-1 overflow-auto bg-gray-100 p-8 dark:bg-gray-950">
+          <div
+            className="mx-auto transition-all duration-300"
+            style={{
+              maxWidth: previewDevice === 'mobile' ? '375px' : '100%',
+            }}
+          >
+            <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-900">
+              <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Live Preview</h3>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Eye className="w-4 h-4" />
-                  {selectedTestimonialIds.length > 0 
+                  <Eye className="h-4 w-4" />
+                  {selectedTestimonialIds.length > 0
                     ? `${selectedTestimonialIds.length} selected`
                     : `${allTestimonials?.length || 0} testimonials`}
                 </div>
               </div>
-              <WidgetPreview 
+              <WidgetPreview
                 widget={{
                   ...widget,
                   config: {
@@ -989,33 +1206,37 @@ subdomain.example.com"
                     filters: {
                       ...widget.config.filters,
                       selectedTestimonialIds: selectedTestimonialIds,
-                      testimonialOrder: testimonialOrder
-                    }
-                  }
-                }} 
+                      testimonialOrder: testimonialOrder,
+                    },
+                  },
+                }}
                 testimonials={(() => {
                   if (!allTestimonials) return []
-                  
+
                   // Filter testimonials based on current UI selection
                   let filtered = allTestimonials
                   if (selectedTestimonialIds.length > 0) {
-                    filtered = allTestimonials.filter(t => selectedTestimonialIds.includes(t.id))
+                    filtered = allTestimonials.filter((t) =>
+                      selectedTestimonialIds.includes(t.id)
+                    )
                   }
-                  
+
                   // Apply custom order
                   if (testimonialOrder.length > 0) {
                     const orderMap = new Map(
                       testimonialOrder.map((id, index) => [id, index])
                     )
                     filtered = filtered.sort((a, b) => {
-                      const orderA = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER
-                      const orderB = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER
+                      const orderA =
+                        orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER
+                      const orderB =
+                        orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER
                       return orderA - orderB
                     })
                   }
-                  
+
                   return filtered
-                })()} 
+                })()}
               />
             </div>
           </div>

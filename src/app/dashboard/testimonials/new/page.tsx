@@ -30,7 +30,7 @@ import { toast } from 'sonner'
 export default function NewTestimonialPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   // Form state
   const [formData, setFormData] = useState({
     formId: '',
@@ -44,7 +44,7 @@ export default function NewTestimonialPage() {
   })
 
   const { data: forms } = api.form.list.useQuery()
-  
+
   const createMutation = api.testimonial.createManual.useMutation({
     onSuccess: () => {
       toast.success('Testimonial created successfully')
@@ -58,7 +58,7 @@ export default function NewTestimonialPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.formId || !formData.customerName || !formData.content) {
       toast.error('Please fill in all required fields')
       return
@@ -82,7 +82,7 @@ export default function NewTestimonialPage() {
           <div className="mb-6">
             <Link href="/dashboard/testimonials">
               <Button variant="ghost" size="sm" className="mb-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Testimonials
               </Button>
             </Link>
@@ -109,7 +109,9 @@ export default function NewTestimonialPage() {
                   </Label>
                   <Select
                     value={formData.formId}
-                    onValueChange={(value) => setFormData({ ...formData, formId: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, formId: value })
+                    }
                   >
                     <SelectTrigger id="form">
                       <SelectValue placeholder="Select a form" />
@@ -132,7 +134,9 @@ export default function NewTestimonialPage() {
                   <Input
                     id="name"
                     value={formData.customerName}
-                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customerName: e.target.value })
+                    }
                     placeholder="John Doe"
                     required
                   />
@@ -145,7 +149,12 @@ export default function NewTestimonialPage() {
                     id="email"
                     type="email"
                     value={formData.customerEmail}
-                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        customerEmail: e.target.value,
+                      })
+                    }
                     placeholder="john@example.com"
                   />
                 </div>
@@ -156,7 +165,12 @@ export default function NewTestimonialPage() {
                   <Input
                     id="company"
                     value={formData.customerCompany}
-                    onChange={(e) => setFormData({ ...formData, customerCompany: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        customerCompany: e.target.value,
+                      })
+                    }
                     placeholder="Acme Corp"
                   />
                 </div>
@@ -168,7 +182,12 @@ export default function NewTestimonialPage() {
                     id="photo"
                     type="url"
                     value={formData.customerPhoto}
-                    onChange={(e) => setFormData({ ...formData, customerPhoto: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        customerPhoto: e.target.value,
+                      })
+                    }
                     placeholder="https://example.com/photo.jpg"
                   />
                 </div>
@@ -181,7 +200,9 @@ export default function NewTestimonialPage() {
                   <Textarea
                     id="content"
                     value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, content: e.target.value })
+                    }
                     placeholder="This product is amazing..."
                     rows={4}
                     required
@@ -200,7 +221,9 @@ export default function NewTestimonialPage() {
                       max={5}
                       step={1}
                       value={[formData.rating]}
-                      onValueChange={(value) => setFormData({ ...formData, rating: value[0] || 5 })}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, rating: value[0] || 5 })
+                      }
                       className="flex-1"
                     />
                     <div className="flex gap-1">
@@ -208,7 +231,9 @@ export default function NewTestimonialPage() {
                         <span
                           key={star}
                           className={`text-xl ${
-                            star <= formData.rating ? 'text-yellow-500' : 'text-gray-300'
+                            star <= formData.rating
+                              ? 'text-yellow-500'
+                              : 'text-gray-300'
                           }`}
                         >
                           ★
@@ -223,9 +248,9 @@ export default function NewTestimonialPage() {
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: 'pending' | 'approved' | 'rejected') => 
-                      setFormData({ ...formData, status: value })
-                    }
+                    onValueChange={(
+                      value: 'pending' | 'approved' | 'rejected'
+                    ) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger id="status">
                       <SelectValue />

@@ -72,14 +72,14 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
   const [rating, setRating] = useState(5)
   const [mediaUrl, setMediaUrl] = useState<string>()
   const [mediaType, setMediaType] = useState<'image' | 'video'>()
-  
+
   const { styling, settings } = form.config
   const borderRadius = radiusMap[styling.borderRadius]
 
   // Base schema that always exists
   const baseSchema = z.object({
     content: z.string().min(10, 'Please write at least 10 characters'),
-    customerName: settings.requireName 
+    customerName: settings.requireName
       ? z.string().min(2, 'Name is required')
       : z.string().optional(),
     customerEmail: settings.requireEmail
@@ -100,14 +100,14 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch
+    watch,
   } = useForm<FormData>({
     resolver: zodResolver(baseSchema.passthrough()) as any,
     defaultValues: {
       content: '',
       customerName: '',
       customerEmail: '',
-    }
+    },
   })
 
   const submitTestimonial = api.testimonial.submit.useMutation({
@@ -124,7 +124,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
 
   const onSubmit = async (data: FormData) => {
     const customAnswers: Record<string, unknown> = {}
-    
+
     form.config.questions.forEach((question) => {
       const value = data[question.id]
       if (value !== undefined && value !== '') {
@@ -170,39 +170,46 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
           }}
         >
           {styling.showLogo && styling.logoUrl && (
-            <img
-              src={styling.logoUrl}
-              alt="Logo"
-              className="h-10 mb-6"
-            />
+            <img src={styling.logoUrl} alt="Logo" className="mb-6 h-10" />
           )}
-          <h1 className="text-3xl font-bold mb-3">{form.config.title}</h1>
+          <h1 className="mb-3 text-3xl font-bold">{form.config.title}</h1>
           <p className="text-lg opacity-95">{form.config.description}</p>
         </div>
 
         {/* Pre-Prompt Section */}
-        {form.config.prePrompt?.enabled && form.config.prePrompt.questions.length > 0 && (
-          <div className="p-8 border-b bg-gray-50 dark:bg-gray-800/50">
-            <h2 className="text-lg font-semibold mb-3" style={{ color: styling.primaryColor }}>
-              {form.config.prePrompt.title}
-            </h2>
-            <ul className="space-y-2">
-              {form.config.prePrompt.questions.map((question, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="text-sm" style={{ color: styling.primaryColor }}>•</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{question}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {form.config.prePrompt?.enabled &&
+          form.config.prePrompt.questions.length > 0 && (
+            <div className="border-b bg-gray-50 p-8 dark:bg-gray-800/50">
+              <h2
+                className="mb-3 text-lg font-semibold"
+                style={{ color: styling.primaryColor }}
+              >
+                {form.config.prePrompt.title}
+              </h2>
+              <ul className="space-y-2">
+                {form.config.prePrompt.questions.map((question, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span
+                      className="text-sm"
+                      style={{ color: styling.primaryColor }}
+                    >
+                      •
+                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {question}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-8">
           {/* Name Field */}
           {settings.requireName && (
             <div>
-              <Label className="text-sm font-medium mb-2 block">
+              <Label className="mb-2 block text-sm font-medium">
                 Your Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -212,7 +219,9 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                 className={errors.customerName ? 'border-red-500' : ''}
               />
               {errors.customerName && (
-                <p className="text-red-500 text-sm mt-1">{errors.customerName.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.customerName.message}
+                </p>
               )}
             </div>
           )}
@@ -220,7 +229,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
           {/* Email Field */}
           {settings.requireEmail && (
             <div>
-              <Label className="text-sm font-medium mb-2 block">
+              <Label className="mb-2 block text-sm font-medium">
                 Email Address <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -231,15 +240,18 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                 className={errors.customerEmail ? 'border-red-500' : ''}
               />
               {errors.customerEmail && (
-                <p className="text-red-500 text-sm mt-1">{errors.customerEmail.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.customerEmail.message}
+                </p>
               )}
             </div>
           )}
 
           {/* Rating */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">
-              How would you rate your experience? <span className="text-red-500">*</span>
+            <Label className="mb-2 block text-sm font-medium">
+              How would you rate your experience?{' '}
+              <span className="text-red-500">*</span>
             </Label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -248,11 +260,13 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                   type="button"
                   onClick={() => setRating(star)}
                   className="text-3xl transition-all hover:scale-110"
-                  style={{ 
-                    color: star <= rating ? styling.primaryColor : '#D1D5DB'
+                  style={{
+                    color: star <= rating ? styling.primaryColor : '#D1D5DB',
                   }}
                 >
-                  <Star className={`w-8 h-8 ${star <= rating ? 'fill-current' : ''}`} />
+                  <Star
+                    className={`h-8 w-8 ${star <= rating ? 'fill-current' : ''}`}
+                  />
                 </button>
               ))}
             </div>
@@ -260,7 +274,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
 
           {/* Main Testimonial */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">
+            <Label className="mb-2 block text-sm font-medium">
               Your Testimonial <span className="text-red-500">*</span>
             </Label>
             <Textarea
@@ -271,17 +285,20 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
               className={errors.content ? 'border-red-500' : ''}
             />
             {errors.content && (
-              <p className="text-red-500 text-sm mt-1">{errors.content.message}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {errors.content.message}
+              </p>
             )}
           </div>
 
           {/* Custom Questions */}
           {form.config.questions.map((question) => (
             <div key={question.id}>
-              <Label className="text-sm font-medium mb-2 block">
-                {question.label} {question.required && <span className="text-red-500">*</span>}
+              <Label className="mb-2 block text-sm font-medium">
+                {question.label}{' '}
+                {question.required && <span className="text-red-500">*</span>}
               </Label>
-              
+
               {question.type === 'text' && (
                 <Input
                   {...register(question.id)}
@@ -289,7 +306,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                   style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
                 />
               )}
-              
+
               {question.type === 'textarea' && (
                 <Textarea
                   {...register(question.id)}
@@ -298,7 +315,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                   style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
                 />
               )}
-              
+
               {question.type === 'rating' && (
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -307,20 +324,25 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
                       type="button"
                       onClick={() => setValue(question.id, star)}
                       className="text-2xl transition-all hover:scale-110"
-                      style={{ 
-                        color: star <= (watch(question.id) as number || 0) ? styling.primaryColor : '#D1D5DB'
+                      style={{
+                        color:
+                          star <= ((watch(question.id) as number) || 0)
+                            ? styling.primaryColor
+                            : '#D1D5DB',
                       }}
                     >
-                      <Star className={`w-6 h-6 ${star <= (watch(question.id) as number || 0) ? 'fill-current' : ''}`} />
+                      <Star
+                        className={`h-6 w-6 ${star <= ((watch(question.id) as number) || 0) ? 'fill-current' : ''}`}
+                      />
                     </button>
                   ))}
                 </div>
               )}
-              
+
               {question.type === 'select' && (
                 <select
                   {...register(question.id)}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full rounded-md border p-2"
                   style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
                 >
                   <option value="">Choose an option</option>
@@ -333,7 +355,7 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
               )}
 
               {errors[question.id] && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="mt-1 text-sm text-red-500">
                   {(errors[question.id] as any)?.message}
                 </p>
               )}
@@ -385,9 +407,9 @@ export function TestimonialForm({ form }: TestimonialFormProps) {
           </Button>
 
           {/* Privacy Note */}
-          <p className="text-xs text-center text-gray-500">
-            By submitting, you agree to our terms and privacy policy.
-            Your testimonial may be displayed publicly.
+          <p className="text-center text-xs text-gray-500">
+            By submitting, you agree to our terms and privacy policy. Your
+            testimonial may be displayed publicly.
           </p>
         </form>
       </Card>

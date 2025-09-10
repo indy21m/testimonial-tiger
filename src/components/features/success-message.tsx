@@ -23,29 +23,29 @@ export function SuccessMessage({ message }: SuccessMessageProps) {
           className="mb-6 inline-block"
         >
           <div className="relative">
-            <div className="absolute inset-0 bg-green-500/20 rounded-full blur-xl animate-pulse" />
-            <CheckCircle className="w-20 h-20 text-green-500 relative" />
+            <div className="absolute inset-0 animate-pulse rounded-full bg-green-500/20 blur-xl" />
+            <CheckCircle className="relative h-20 w-20 text-green-500" />
           </div>
         </motion.div>
-        
+
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-3xl font-bold mb-4"
+          className="mb-4 text-3xl font-bold"
         >
           Thank You! 🎉
         </motion.h2>
-        
+
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="text-lg text-gray-600 dark:text-gray-400 max-w-md mx-auto"
+          className="mx-auto max-w-md text-lg text-gray-600 dark:text-gray-400"
         >
           {message}
         </motion.p>
-        
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

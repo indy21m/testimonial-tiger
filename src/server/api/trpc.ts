@@ -48,7 +48,7 @@ const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
   if (!existingUser) {
     // Get user details from Clerk
     const clerkUser = await currentUser()
-    
+
     if (!clerkUser) {
       throw new TRPCError({ code: 'UNAUTHORIZED' })
     }
@@ -58,7 +58,9 @@ const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
       await db.insert(users).values({
         id: ctx.userId,
         email: clerkUser.emailAddresses[0]?.emailAddress || '',
-        name: clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : null,
+        name: clerkUser.firstName
+          ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim()
+          : null,
       })
     } catch (error) {
       // User might already exist, that's fine

@@ -40,7 +40,9 @@ export function MediaUpload({
   const [showVideoRecorder, setShowVideoRecorder] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -75,17 +77,19 @@ export function MediaUpload({
     try {
       // Upload to storage service
       const url = await uploadImage(file)
-      
+
       setUploadedFile({
         url,
         type: isImage ? 'image' : 'video',
         name: file.name,
       })
-      
+
       onUpload(url, isImage ? 'image' : 'video')
     } catch (error) {
       console.error('Upload failed:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to upload file')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to upload file'
+      )
     } finally {
       setIsUploading(false)
     }
@@ -107,7 +111,7 @@ export function MediaUpload({
     try {
       // Upload video blob to storage
       const uploadedUrl = await uploadVideoBlob(blob)
-      
+
       setUploadedFile({
         url: uploadedUrl,
         type: 'video',
@@ -125,13 +129,13 @@ export function MediaUpload({
 
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium mb-2">
+      <label className="mb-2 block text-sm font-medium">
         Add Media (Optional)
       </label>
 
       {!uploadedFile ? (
-        <Card 
-          className="border-2 border-dashed p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+        <Card
+          className="cursor-pointer border-2 border-dashed p-6 text-center transition-colors hover:border-primary/50"
           style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
           onClick={() => fileInputRef.current?.click()}
         >
@@ -142,38 +146,41 @@ export function MediaUpload({
             onChange={handleFileSelect}
             className="hidden"
           />
-          
-          <div className="flex justify-center gap-4 mb-4">
+
+          <div className="mb-4 flex justify-center gap-4">
             {allowImage && (
-              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full">
-                <Camera className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <div className="rounded-full bg-gray-100 p-3 dark:bg-gray-800">
+                <Camera className="h-6 w-6 text-gray-600 dark:text-gray-400" />
               </div>
             )}
             {allowVideo && (
-              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full">
-                <Video className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <div className="rounded-full bg-gray-100 p-3 dark:bg-gray-800">
+                <Video className="h-6 w-6 text-gray-600 dark:text-gray-400" />
               </div>
             )}
           </div>
-          
-          <p className="text-sm font-medium mb-1">
-            {allowImage && allowVideo ? 'Upload a photo or video' : 
-             allowImage ? 'Upload a photo' : 'Upload a video'}
+
+          <p className="mb-1 text-sm font-medium">
+            {allowImage && allowVideo
+              ? 'Upload a photo or video'
+              : allowImage
+                ? 'Upload a photo'
+                : 'Upload a video'}
           </p>
           <p className="text-xs text-gray-500">
             {allowImage && `Images up to 5MB`}
             {allowImage && allowVideo && ' • '}
             {allowVideo && `Videos up to 50MB (${maxVideoLength}s max)`}
           </p>
-          
-          <div className="flex gap-3 justify-center mt-4">
+
+          <div className="mt-4 flex justify-center gap-3">
             <Button
               type="button"
               variant="outline"
               size="sm"
               disabled={isUploading}
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="mr-2 h-4 w-4" />
               {isUploading ? 'Uploading...' : 'Choose File'}
             </Button>
             {allowVideo && (
@@ -183,27 +190,27 @@ export function MediaUpload({
                 size="sm"
                 onClick={() => setShowVideoRecorder(true)}
               >
-                <Video className="w-4 h-4 mr-2" />
+                <Video className="mr-2 h-4 w-4" />
                 Record Video
               </Button>
             )}
           </div>
         </Card>
       ) : (
-        <Card 
+        <Card
           className="p-4"
           style={{ borderRadius: `${parseInt(borderRadius) / 2}px` }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div 
-                className="p-2 rounded-full"
+              <div
+                className="rounded-full p-2"
                 style={{ backgroundColor: `${primaryColor}20` }}
               >
                 {uploadedFile.type === 'image' ? (
-                  <Camera className="w-5 h-5" style={{ color: primaryColor }} />
+                  <Camera className="h-5 w-5" style={{ color: primaryColor }} />
                 ) : (
-                  <Video className="w-5 h-5" style={{ color: primaryColor }} />
+                  <Video className="h-5 w-5" style={{ color: primaryColor }} />
                 )}
               </div>
               <div>
@@ -213,7 +220,7 @@ export function MediaUpload({
                 </p>
               </div>
             </div>
-            
+
             <Button
               type="button"
               variant="ghost"
@@ -221,25 +228,25 @@ export function MediaUpload({
               onClick={removeFile}
               className="text-red-500 hover:text-red-600"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
-          
+
           {/* Preview */}
           {uploadedFile.type === 'image' && (
             <img
               src={uploadedFile.url}
               alt="Preview"
-              className="mt-3 w-full h-32 object-cover rounded"
+              className="mt-3 h-32 w-full rounded object-cover"
               style={{ borderRadius: `${parseInt(borderRadius) / 4}px` }}
             />
           )}
-          
+
           {uploadedFile.type === 'video' && (
             <video
               src={uploadedFile.url}
               controls
-              className="mt-3 w-full h-32 object-cover rounded"
+              className="mt-3 h-32 w-full rounded object-cover"
               style={{ borderRadius: `${parseInt(borderRadius) / 4}px` }}
             />
           )}

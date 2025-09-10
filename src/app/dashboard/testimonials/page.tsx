@@ -5,14 +5,21 @@ import Link from 'next/link'
 import { api } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
 import { DashboardNav } from '@/components/features/dashboard-nav'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TestimonialCard } from '@/components/features/testimonial-card'
 import { TestimonialFilters } from '@/components/features/testimonial-filters'
 import { Download, CheckCircle, Trash2, Plus } from 'lucide-react'
 
 export default function TestimonialsPage() {
-  const [status, setStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [status, setStatus] = useState<
+    'all' | 'pending' | 'approved' | 'rejected'
+  >('all')
   const [selectedForm, setSelectedForm] = useState<string>()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -54,13 +61,13 @@ export default function TestimonialsPage() {
     if (selectedIds.length === testimonialData?.testimonials.length) {
       setSelectedIds([])
     } else {
-      setSelectedIds(testimonialData?.testimonials.map(t => t.id) || [])
+      setSelectedIds(testimonialData?.testimonials.map((t) => t.id) || [])
     }
   }
 
   const handleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(i => i !== id))
+      setSelectedIds(selectedIds.filter((i) => i !== id))
     } else {
       setSelectedIds([...selectedIds, id])
     }
@@ -71,7 +78,7 @@ export default function TestimonialsPage() {
 
     const csv = [
       ['Name', 'Email', 'Company', 'Rating', 'Content', 'Status', 'Date'],
-      ...testimonialData.testimonials.map(t => [
+      ...testimonialData.testimonials.map((t) => [
         t.customerName,
         t.customerEmail || '',
         t.customerCompany || '',
@@ -79,8 +86,10 @@ export default function TestimonialsPage() {
         t.content,
         t.status,
         t.submittedAt ? new Date(t.submittedAt).toLocaleDateString() : '',
-      ])
-    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+      ]),
+    ]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n')
 
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
@@ -101,7 +110,7 @@ export default function TestimonialsPage() {
       {/* Main Content */}
       <main className="container mx-auto p-6">
         {/* Page Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Testimonials</h1>
             <p className="text-gray-600 dark:text-gray-400">
@@ -111,19 +120,19 @@ export default function TestimonialsPage() {
           <div className="flex gap-2">
             <Link href="/dashboard/testimonials/new">
               <Button>
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Testimonial
               </Button>
             </Link>
             <Button onClick={exportTestimonials} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4 mb-6">
+        <div className="mb-6 grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total</CardDescription>
@@ -134,7 +143,11 @@ export default function TestimonialsPage() {
             <CardHeader className="pb-2">
               <CardDescription>Pending</CardDescription>
               <CardTitle className="text-2xl text-yellow-600">
-                {testimonials.filter(t => t.status === 'pending' || t.status === null).length}
+                {
+                  testimonials.filter(
+                    (t) => t.status === 'pending' || t.status === null
+                  ).length
+                }
               </CardTitle>
             </CardHeader>
           </Card>
@@ -142,7 +155,7 @@ export default function TestimonialsPage() {
             <CardHeader className="pb-2">
               <CardDescription>Approved</CardDescription>
               <CardTitle className="text-2xl text-green-600">
-                {testimonials.filter(t => t.status === 'approved').length}
+                {testimonials.filter((t) => t.status === 'approved').length}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -150,7 +163,7 @@ export default function TestimonialsPage() {
             <CardHeader className="pb-2">
               <CardDescription>Featured</CardDescription>
               <CardTitle className="text-2xl text-purple-600">
-                {testimonials.filter(t => t.featured).length}
+                {testimonials.filter((t) => t.featured).length}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -166,8 +179,13 @@ export default function TestimonialsPage() {
         />
 
         {/* Tabs */}
-        <Tabs value={status} onValueChange={(v) => setStatus(v as 'all' | 'pending' | 'approved' | 'rejected')}>
-          <div className="flex justify-between items-center mb-4">
+        <Tabs
+          value={status}
+          onValueChange={(v) =>
+            setStatus(v as 'all' | 'pending' | 'approved' | 'rejected')
+          }
+        >
+          <div className="mb-4 flex items-center justify-between">
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -179,17 +197,21 @@ export default function TestimonialsPage() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={() => bulkApproveMutation.mutate({ ids: selectedIds })}
+                  onClick={() =>
+                    bulkApproveMutation.mutate({ ids: selectedIds })
+                  }
                 >
-                  <CheckCircle className="w-4 h-4 mr-1" />
+                  <CheckCircle className="mr-1 h-4 w-4" />
                   Approve ({selectedIds.length})
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => bulkDeleteMutation.mutate({ ids: selectedIds })}
+                  onClick={() =>
+                    bulkDeleteMutation.mutate({ ids: selectedIds })
+                  }
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
+                  <Trash2 className="mr-1 h-4 w-4" />
                   Delete ({selectedIds.length})
                 </Button>
               </div>
@@ -224,9 +246,15 @@ export default function TestimonialsPage() {
                       testimonial={testimonial}
                       isSelected={selectedIds.includes(testimonial.id)}
                       onSelect={() => handleSelect(testimonial.id)}
-                      onApprove={() => approveMutation.mutate({ id: testimonial.id })}
-                      onReject={() => rejectMutation.mutate({ id: testimonial.id })}
-                      onToggleFeatured={() => toggleFeaturedMutation.mutate({ id: testimonial.id })}
+                      onApprove={() =>
+                        approveMutation.mutate({ id: testimonial.id })
+                      }
+                      onReject={() =>
+                        rejectMutation.mutate({ id: testimonial.id })
+                      }
+                      onToggleFeatured={() =>
+                        toggleFeaturedMutation.mutate({ id: testimonial.id })
+                      }
                     />
                   ))}
                 </div>

@@ -5,15 +5,15 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  Video, 
-  Circle, 
-  Square, 
-  RotateCcw, 
+import {
+  Video,
+  Circle,
+  Square,
+  RotateCcw,
   Check,
   Loader2,
   Camera,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react'
 
 interface VideoRecorderProps {
@@ -38,7 +38,7 @@ export function VideoRecorder({
   const [hasPermission, setHasPermission] = useState<boolean>()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
-  
+
   const videoRef = useRef<HTMLVideoElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -50,31 +50,35 @@ export function VideoRecorder({
     try {
       setIsLoading(true)
       setError(undefined)
-      
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: 'user'
+          facingMode: 'user',
         },
-        audio: true
+        audio: true,
       })
-      
+
       streamRef.current = stream
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream
       }
-      
+
       setHasPermission(true)
     } catch (err) {
       console.error('Camera access error:', err)
       setHasPermission(false)
       if (err instanceof Error) {
         if (err.name === 'NotAllowedError') {
-          setError('Camera access denied. Please allow camera access to record a video testimonial.')
+          setError(
+            'Camera access denied. Please allow camera access to record a video testimonial.'
+          )
         } else if (err.name === 'NotFoundError') {
-          setError('No camera found. Please connect a camera to record a video testimonial.')
+          setError(
+            'No camera found. Please connect a camera to record a video testimonial.'
+          )
         } else {
           setError('Failed to access camera. Please try again.')
         }
@@ -87,11 +91,11 @@ export function VideoRecorder({
   // Initialize camera on mount
   useEffect(() => {
     setupCamera()
-    
+
     return () => {
       // Cleanup on unmount
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current.getTracks().forEach((track) => track.stop())
       }
       if (timerRef.current) {
         clearInterval(timerRef.current)
@@ -104,39 +108,39 @@ export function VideoRecorder({
 
   const startRecording = useCallback(() => {
     if (!streamRef.current) return
-    
+
     chunksRef.current = []
-    
+
     const mediaRecorder = new MediaRecorder(streamRef.current, {
-      mimeType: 'video/webm;codecs=vp9,opus'
+      mimeType: 'video/webm;codecs=vp9,opus',
     })
-    
+
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
         chunksRef.current.push(event.data)
       }
     }
-    
+
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: 'video/webm' })
       const url = URL.createObjectURL(blob)
       setRecordedUrl(url)
-      
+
       // Stop the camera stream
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current.getTracks().forEach((track) => track.stop())
       }
     }
-    
+
     mediaRecorderRef.current = mediaRecorder
     mediaRecorder.start(100) // Collect data every 100ms
-    
+
     setIsRecording(true)
     setRecordingTime(0)
-    
+
     // Start timer
     timerRef.current = setInterval(() => {
-      setRecordingTime(prev => {
+      setRecordingTime((prev) => {
         const newTime = prev + 1
         if (newTime >= maxLength) {
           stopRecording()
@@ -147,23 +151,29 @@ export function VideoRecorder({
   }, [maxLength])
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== 'inactive'
+    ) {
       mediaRecorderRef.current.stop()
     }
-    
+
     if (timerRef.current) {
       clearInterval(timerRef.current)
     }
-    
+
     setIsRecording(false)
     setIsPaused(false)
   }, [])
 
   const pauseRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === 'recording'
+    ) {
       mediaRecorderRef.current.pause()
       setIsPaused(true)
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
@@ -171,13 +181,16 @@ export function VideoRecorder({
   }, [])
 
   const resumeRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === 'paused'
+    ) {
       mediaRecorderRef.current.resume()
       setIsPaused(false)
-      
+
       // Resume timer
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => {
+        setRecordingTime((prev) => {
           const newTime = prev + 1
           if (newTime >= maxLength) {
             stopRecording()
@@ -214,7 +227,7 @@ export function VideoRecorder({
     return (
       <Card className="p-8" style={{ borderRadius }}>
         <div className="flex flex-col items-center justify-center space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           <p className="text-sm text-gray-500">Setting up camera...</p>
         </div>
       </Card>
@@ -228,12 +241,15 @@ export function VideoRecorder({
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             <strong>Camera Access Required</strong>
-            <p className="mt-2">{error || 'Please allow camera access to record a video testimonial.'}</p>
+            <p className="mt-2">
+              {error ||
+                'Please allow camera access to record a video testimonial.'}
+            </p>
           </AlertDescription>
         </Alert>
-        <div className="flex gap-3 mt-4">
+        <div className="mt-4 flex gap-3">
           <Button onClick={setupCamera} variant="outline">
-            <Camera className="w-4 h-4 mr-2" />
+            <Camera className="mr-2 h-4 w-4" />
             Try Again
           </Button>
           <Button onClick={onCancel} variant="ghost">
@@ -247,12 +263,12 @@ export function VideoRecorder({
   return (
     <Card className="overflow-hidden" style={{ borderRadius }}>
       {/* Video Display */}
-      <div className="relative bg-black aspect-video">
+      <div className="relative aspect-video bg-black">
         {recordedUrl ? (
           <video
             src={recordedUrl}
             controls
-            className="w-full h-full object-contain"
+            className="h-full w-full object-contain"
           />
         ) : (
           <video
@@ -260,23 +276,23 @@ export function VideoRecorder({
             autoPlay
             muted
             playsInline
-            className="w-full h-full object-contain mirror"
+            className="mirror h-full w-full object-contain"
             style={{ transform: 'scaleX(-1)' }}
           />
         )}
-        
+
         {/* Recording indicator */}
         {isRecording && !recordedUrl && (
-          <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-full">
-            <Circle className="w-3 h-3 fill-current animate-pulse" />
+          <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-white">
+            <Circle className="h-3 w-3 animate-pulse fill-current" />
             <span className="text-sm font-medium">REC</span>
           </div>
         )}
-        
+
         {/* Timer */}
         {(isRecording || isPaused) && !recordedUrl && (
-          <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1.5 rounded-lg">
-            <span className="text-sm font-mono">
+          <div className="absolute right-4 top-4 rounded-lg bg-black/50 px-3 py-1.5 text-white">
+            <span className="font-mono text-sm">
               {formatTime(recordingTime)} / {formatTime(maxLength)}
             </span>
           </div>
@@ -285,14 +301,14 @@ export function VideoRecorder({
 
       {/* Progress bar */}
       {(isRecording || isPaused) && !recordedUrl && (
-        <Progress 
-          value={(recordingTime / maxLength) * 100} 
+        <Progress
+          value={(recordingTime / maxLength) * 100}
           className="h-1 rounded-none"
         />
       )}
 
       {/* Controls */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-800">
+      <div className="bg-gray-50 p-4 dark:bg-gray-800">
         {!recordedUrl ? (
           <div className="flex items-center justify-center gap-3">
             {!isRecording ? (
@@ -302,7 +318,7 @@ export function VideoRecorder({
                   size="lg"
                   style={{ backgroundColor: primaryColor }}
                 >
-                  <Circle className="w-5 h-5 mr-2 fill-current" />
+                  <Circle className="mr-2 h-5 w-5 fill-current" />
                   Start Recording
                 </Button>
                 <Button onClick={onCancel} variant="outline" size="lg">
@@ -312,21 +328,13 @@ export function VideoRecorder({
             ) : (
               <>
                 {isPaused ? (
-                  <Button
-                    onClick={resumeRecording}
-                    size="lg"
-                    variant="outline"
-                  >
-                    <Video className="w-5 h-5 mr-2" />
+                  <Button onClick={resumeRecording} size="lg" variant="outline">
+                    <Video className="mr-2 h-5 w-5" />
                     Resume
                   </Button>
                 ) : (
-                  <Button
-                    onClick={pauseRecording}
-                    size="lg"
-                    variant="outline"
-                  >
-                    <Square className="w-5 h-5 mr-2" />
+                  <Button onClick={pauseRecording} size="lg" variant="outline">
+                    <Square className="mr-2 h-5 w-5" />
                     Pause
                   </Button>
                 )}
@@ -335,7 +343,7 @@ export function VideoRecorder({
                   size="lg"
                   className="bg-red-600 hover:bg-red-700"
                 >
-                  <Square className="w-5 h-5 mr-2 fill-current" />
+                  <Square className="mr-2 h-5 w-5 fill-current" />
                   Stop Recording
                 </Button>
               </>
@@ -347,12 +355,8 @@ export function VideoRecorder({
               Review your video testimonial
             </p>
             <div className="flex items-center justify-center gap-3">
-              <Button
-                onClick={retakeVideo}
-                variant="outline"
-                size="lg"
-              >
-                <RotateCcw className="w-5 h-5 mr-2" />
+              <Button onClick={retakeVideo} variant="outline" size="lg">
+                <RotateCcw className="mr-2 h-5 w-5" />
                 Retake
               </Button>
               <Button
@@ -360,7 +364,7 @@ export function VideoRecorder({
                 size="lg"
                 style={{ backgroundColor: primaryColor }}
               >
-                <Check className="w-5 h-5 mr-2" />
+                <Check className="mr-2 h-5 w-5" />
                 Use This Video
               </Button>
             </div>

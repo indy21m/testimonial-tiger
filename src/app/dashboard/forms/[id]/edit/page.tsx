@@ -180,7 +180,8 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                 <CardHeader>
                   <CardTitle>Pre-Testimonial Prompt</CardTitle>
                   <CardDescription>
-                    Guide customers with prompts before they write their testimonial
+                    Guide customers with prompts before they write their
+                    testimonial
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -197,40 +198,57 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                           questions: [
                             'What specific problem did our product solve for you?',
                             'How did it improve your workflow or results?',
-                            'Would you recommend this to others? Why?'
-                          ]
+                            'Would you recommend this to others? Why?',
+                          ],
                         }
                         handleConfigUpdate({
-                          prePrompt: { ...currentPrompt, enabled: e.target.checked }
+                          prePrompt: {
+                            ...currentPrompt,
+                            enabled: e.target.checked,
+                          },
                         })
                       }}
                       className="rounded"
                     />
                   </div>
-                  
+
                   {form.config.prePrompt?.enabled && (
                     <>
                       <div>
                         <Label>Prompt Title</Label>
                         <Input
-                          value={form.config.prePrompt?.title || 'Before you start...'}
-                          onChange={(e) => handleConfigUpdate({
-                            prePrompt: { ...form.config.prePrompt, title: e.target.value }
-                          })}
+                          value={
+                            form.config.prePrompt?.title ||
+                            'Before you start...'
+                          }
+                          onChange={(e) =>
+                            handleConfigUpdate({
+                              prePrompt: {
+                                ...form.config.prePrompt,
+                                title: e.target.value,
+                              },
+                            })
+                          }
                           placeholder="Before you start..."
                         />
                       </div>
-                      
+
                       <div>
                         <Label>Prompt Questions (one per line)</Label>
                         <Textarea
-                          value={form.config.prePrompt?.questions?.join('\n') || ''}
-                          onChange={(e) => handleConfigUpdate({
-                            prePrompt: {
-                              ...form.config.prePrompt,
-                              questions: e.target.value.split('\n').filter(q => q.trim())
-                            }
-                          })}
+                          value={
+                            form.config.prePrompt?.questions?.join('\n') || ''
+                          }
+                          onChange={(e) =>
+                            handleConfigUpdate({
+                              prePrompt: {
+                                ...form.config.prePrompt,
+                                questions: e.target.value
+                                  .split('\n')
+                                  .filter((q) => q.trim()),
+                              },
+                            })
+                          }
                           placeholder="What specific problem did our product solve?
 How did it improve your workflow?
 Would you recommend this to others?"
@@ -282,7 +300,7 @@ Would you recommend this to others?"
                 settings={form.config.settings}
                 onChange={(settings) => handleConfigUpdate({ settings })}
               />
-              
+
               {/* Custom Domain Manager */}
               <CustomDomainManager
                 formId={form.id}

@@ -27,10 +27,7 @@ export const testimonialRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Verify form ownership
       const form = await ctx.db.query.forms.findFirst({
-        where: and(
-          eq(forms.id, input.formId),
-          eq(forms.userId, ctx.userId)
-        ),
+        where: and(eq(forms.id, input.formId), eq(forms.userId, ctx.userId)),
       })
 
       if (!form) {
@@ -337,10 +334,7 @@ export const testimonialRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Verify form ownership
       const form = await ctx.db.query.forms.findFirst({
-        where: and(
-          eq(forms.id, input.formId),
-          eq(forms.userId, ctx.userId)
-        ),
+        where: and(eq(forms.id, input.formId), eq(forms.userId, ctx.userId)),
       })
 
       if (!form) {
@@ -373,7 +367,7 @@ export const testimonialRouter = createTRPCRouter({
 
       for (const testimonial of input.testimonials) {
         const key = `${testimonial.customerEmail || ''}_${testimonial.content.slice(0, 50)}`
-        
+
         if (existingSet.has(key)) {
           results.duplicates++
           continue

@@ -32,11 +32,13 @@ const formConfigSchema = z.object({
     redirectUrl: z.string().optional(),
     successMessage: z.string(),
   }),
-  prePrompt: z.object({
-    enabled: z.boolean(),
-    title: z.string(),
-    questions: z.array(z.string()),
-  }).optional(),
+  prePrompt: z
+    .object({
+      enabled: z.boolean(),
+      title: z.string(),
+      questions: z.array(z.string()),
+    })
+    .optional(),
   styling: z.object({
     theme: z.enum(['minimal', 'modern', 'bold', 'custom']),
     primaryColor: z.string(),

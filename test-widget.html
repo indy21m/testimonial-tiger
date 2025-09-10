@@ -1,32 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Widget Embedding</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Testimonial Widget Test</h1>
-    
+
     <!-- Testimonial Tiger Widget -->
     <div id="tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d"></div>
-    <script 
-        src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
-        onload="console.log('Widget script loaded successfully')"
-        onerror="console.error('Failed to load widget script')"
+    <script
+      src="https://tiger.zoostack.com/widget/96e4fe85-87b7-45e4-9f7c-6f9610cab74d"
+      onload="console.log('Widget script loaded successfully')"
+      onerror="console.error('Failed to load widget script')"
     ></script>
-    
+
     <p>Widget should appear above this text.</p>
 
     <script>
-        // Debug info
-        console.log('Page loaded, widget container exists:', document.getElementById('tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d'));
-        
-        // Check if script loads
-        setTimeout(() => {
-            const container = document.getElementById('tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d');
-            console.log('After 2 seconds, container innerHTML:', container?.innerHTML || 'empty');
-        }, 2000);
+      // Debug info
+      console.log(
+        'Page loaded, widget container exists:',
+        document.getElementById(
+          'tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d'
+        )
+      )
+
+      // Check if script loads
+      setTimeout(() => {
+        const container = document.getElementById(
+          'tt-widget-96e4fe85-87b7-45e4-9f7c-6f9610cab74d'
+        )
+        console.log(
+          'After 2 seconds, container innerHTML:',
+          container?.innerHTML || 'empty'
+        )
+      }, 2000)
     </script>
-</body>
+  </body>
 </html>
