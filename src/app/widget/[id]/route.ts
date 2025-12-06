@@ -153,116 +153,160 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
   const { config } = widget
   const widgetId = widget.id
 
-  // Generate CSS
+  // Generate CSS with !important to prevent host site overrides
   const css = `
     .tt-widget-${widgetId} {
-      font-family: ${config.styling.fontFamily}, sans-serif;
-      color: ${config.styling.textColor};
+      font-family: ${config.styling.fontFamily}, sans-serif !important;
+      color: ${config.styling.textColor} !important;
       --tt-primary: ${config.styling.primaryColor};
       --tt-bg: ${config.styling.backgroundColor};
       --tt-text: ${config.styling.textColor};
       --tt-border: ${config.styling.borderColor};
       --tt-radius: ${config.styling.borderRadius};
     }
-    
+
     .tt-widget-${widgetId} * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+      box-sizing: border-box !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-testimonial {
-      background: var(--tt-bg);
-      border: 1px solid var(--tt-border);
-      border-radius: var(--tt-radius);
-      padding: ${config.styling.layout === 'compact' ? '12px' : config.styling.layout === 'spacious' ? '24px' : '16px'};
+      background: var(--tt-bg) !important;
+      border: 1px solid var(--tt-border) !important;
+      border-radius: var(--tt-radius) !important;
+      padding: ${config.styling.layout === 'compact' ? '12px' : config.styling.layout === 'spacious' ? '24px' : '16px'} !important;
+      margin: 0 !important;
       ${
         config.styling.shadow === 'sm'
-          ? 'box-shadow: 0 1px 3px rgba(0,0,0,0.12);'
+          ? 'box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;'
           : config.styling.shadow === 'md'
-            ? 'box-shadow: 0 4px 6px rgba(0,0,0,0.1);'
+            ? 'box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;'
             : config.styling.shadow === 'lg'
-              ? 'box-shadow: 0 10px 15px rgba(0,0,0,0.1);'
-              : ''
+              ? 'box-shadow: 0 10px 15px rgba(0,0,0,0.1) !important;'
+              : 'box-shadow: none !important;'
       }
     }
-    
+
     .tt-widget-${widgetId} .tt-rating {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 12px;
+      display: flex !important;
+      gap: 4px !important;
+      margin-bottom: 12px !important;
+      padding: 0 !important;
+      background: transparent !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-star {
-      width: 16px;
-      height: 16px;
-      fill: #FFC107;
+      width: 16px !important;
+      height: 16px !important;
+      fill: #FFC107 !important;
+      background: transparent !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-star.empty {
-      fill: #E0E0E0;
+      fill: #E0E0E0 !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-content {
-      line-height: 1.6;
-      margin-bottom: 16px;
+      line-height: 1.6 !important;
+      margin-bottom: 16px !important;
+      padding: 0 !important;
+      background: transparent !important;
+      color: var(--tt-text) !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-customer {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #E0E0E0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 50% !important;
+      background: #E0E0E0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0 !important;
+      overflow: hidden !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-avatar img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 50% !important;
+      object-fit: cover !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-customer-info {
-      flex: 1;
-      min-width: 0;
+      flex: 1 !important;
+      min-width: 0 !important;
+      background: transparent !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-customer-name {
-      font-weight: 600;
-      margin-bottom: 2px;
+      font-weight: 600 !important;
+      margin-bottom: 2px !important;
+      color: var(--tt-text) !important;
+      background: transparent !important;
     }
-    
+
     .tt-widget-${widgetId} .tt-customer-company {
-      font-size: 14px;
-      opacity: 0.7;
+      font-size: 14px !important;
+      opacity: 0.7 !important;
+      color: var(--tt-text) !important;
+      background: transparent !important;
     }
     
-    /* Widget type specific styles */
+    /* Widget type specific styles - Masonry layout using CSS columns */
     .tt-widget-${widgetId}.tt-wall {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
+      column-count: 3;
+      column-gap: 16px;
     }
-    
+
+    .tt-widget-${widgetId}.tt-wall .tt-testimonial {
+      break-inside: avoid;
+      margin-bottom: 16px;
+      display: inline-block;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      .tt-widget-${widgetId}.tt-wall {
+        column-count: 2;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .tt-widget-${widgetId}.tt-wall {
+        column-count: 1;
+      }
+    }
+
     .tt-widget-${widgetId}.tt-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+      column-count: 3;
+      column-gap: 16px;
     }
-    
-    @media (max-width: 768px) {
+
+    .tt-widget-${widgetId}.tt-grid .tt-testimonial {
+      break-inside: avoid;
+      margin-bottom: 16px;
+      display: inline-block;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
       .tt-widget-${widgetId}.tt-grid {
-        grid-template-columns: 1fr;
+        column-count: 2;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .tt-widget-${widgetId}.tt-grid {
+        column-count: 1;
       }
     }
     
