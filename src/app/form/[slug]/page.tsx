@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
-import { api } from '@/lib/trpc/server'
+import { db, forms } from '@/server/db'
+import { eq, sql } from 'drizzle-orm'
 import { TestimonialForm } from '@/components/features/testimonial-form'
 
 // Force dynamic rendering to avoid build-time database access
@@ -12,15 +13,21 @@ interface FormPageProps {
 export default async function FormPage({ params }: FormPageProps) {
   const { slug } = await params
 
-  // Fetch form by slug - this is a public endpoint
-  const form = await api.form.getBySlug.query({ slug })
+  // Fetch form directly from DB (more reliable than tRPC in server components)
+  const form = await db.query.forms.findFirst({
+    where: eq(forms.slug, slug),
+  })
 
   if (!form) {
     notFound()
   }
 
-  // Track form view
-  await api.form.trackView.mutate({ id: form.id })
+  // Track form view (non-blocking)
+  db.update(forms)
+    .set({ views: sql`${forms.views} + 1` })
+    .where(eq(forms.id, form.id))
+    .then(() => {})
+    .catch(console.error)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
