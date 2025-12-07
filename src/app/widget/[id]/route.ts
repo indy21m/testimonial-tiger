@@ -153,7 +153,7 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
   const { config } = widget
   const widgetId = widget.id
 
-  // Generate CSS with direct values and !important to prevent host site overrides
+  // Extract styling values
   const bgColor = config.styling.backgroundColor || '#ffffff'
   const textColor = config.styling.textColor || '#1f2937'
   const borderColor = config.styling.borderColor || '#e5e7eb'
@@ -168,252 +168,16 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
         ? '0 10px 15px rgba(0,0,0,0.1)'
         : 'none'
 
-  const css = `
-    /* CSS Reset for widget container */
-    #tt-widget-${widgetId},
-    #tt-widget-${widgetId} *,
-    #tt-widget-${widgetId} *::before,
-    #tt-widget-${widgetId} *::after {
-      box-sizing: border-box !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: none !important;
-      background: transparent !important;
-    }
-
-    #tt-widget-${widgetId} .tt-widget-${widgetId} {
-      font-family: ${config.styling.fontFamily || 'system-ui'}, -apple-system, sans-serif !important;
-      color: ${textColor} !important;
-      background: transparent !important;
-    }
-
-    #tt-widget-${widgetId} .tt-testimonial {
-      background: ${bgColor} !important;
-      background-color: ${bgColor} !important;
-      border: 1px solid ${borderColor} !important;
-      border-radius: ${borderRadius} !important;
-      padding: ${padding} !important;
-      margin: 0 0 16px 0 !important;
-      box-shadow: ${shadow} !important;
-      display: inline-block !important;
-      width: 100% !important;
-    }
-
-    #tt-widget-${widgetId} .tt-rating {
-      display: flex !important;
-      gap: 4px !important;
-      margin: 0 0 12px 0 !important;
-      padding: 0 !important;
-      background: transparent !important;
-    }
-
-    #tt-widget-${widgetId} .tt-star {
-      width: 16px !important;
-      height: 16px !important;
-      fill: #FFC107 !important;
-      background: transparent !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-star.empty {
-      fill: #E0E0E0 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-content {
-      line-height: 1.6 !important;
-      margin: 0 0 16px 0 !important;
-      padding: 0 !important;
-      background: transparent !important;
-      color: ${textColor} !important;
-      font-size: 14px !important;
-    }
-
-    #tt-widget-${widgetId} .tt-content-text,
-    #tt-widget-${widgetId} .tt-content-full {
-      background: transparent !important;
-      color: ${textColor} !important;
-    }
-
-    #tt-widget-${widgetId} .tt-read-more {
-      background: none !important;
-      border: none !important;
-      color: ${primaryColor} !important;
-      cursor: pointer !important;
-      font-size: inherit !important;
-      padding: 0 !important;
-      margin: 0 0 0 4px !important;
-      text-decoration: underline !important;
-    }
-
-    #tt-widget-${widgetId} .tt-video {
-      margin: 0 0 16px 0 !important;
-      padding: 0 !important;
-      background: transparent !important;
-    }
-
-    #tt-widget-${widgetId} .tt-video video {
-      width: 100% !important;
-      border-radius: 8px !important;
-      background: #000 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-customer {
-      display: flex !important;
-      align-items: center !important;
-      gap: 12px !important;
-      background: transparent !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-avatar {
-      width: 40px !important;
-      height: 40px !important;
-      min-width: 40px !important;
-      min-height: 40px !important;
-      border-radius: 50% !important;
-      background: #E0E0E0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      flex-shrink: 0 !important;
-      overflow: hidden !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-avatar img {
-      width: 100% !important;
-      height: 100% !important;
-      border-radius: 50% !important;
-      object-fit: cover !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-customer-info {
-      flex: 1 !important;
-      min-width: 0 !important;
-      background: transparent !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-customer-name {
-      font-weight: 600 !important;
-      margin: 0 0 2px 0 !important;
-      padding: 0 !important;
-      color: ${textColor} !important;
-      background: transparent !important;
-      font-size: 14px !important;
-    }
-
-    #tt-widget-${widgetId} .tt-customer-company {
-      font-size: 13px !important;
-      opacity: 0.7 !important;
-      color: ${textColor} !important;
-      background: transparent !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    /* Masonry layout using CSS columns */
-    #tt-widget-${widgetId} .tt-widget-${widgetId}.tt-wall,
-    #tt-widget-${widgetId} .tt-widget-${widgetId}.tt-grid {
-      column-count: 3 !important;
-      column-gap: 16px !important;
-      background: transparent !important;
-    }
-
-    #tt-widget-${widgetId} .tt-wall .tt-testimonial,
-    #tt-widget-${widgetId} .tt-grid .tt-testimonial {
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
-      -webkit-column-break-inside: avoid !important;
-    }
-
-    @media (max-width: 1024px) {
-      #tt-widget-${widgetId} .tt-widget-${widgetId}.tt-wall,
-      #tt-widget-${widgetId} .tt-widget-${widgetId}.tt-grid {
-        column-count: 2 !important;
-      }
-    }
-
-    @media (max-width: 640px) {
-      #tt-widget-${widgetId} .tt-widget-${widgetId}.tt-wall,
-      #tt-widget-${widgetId} .tt-widget-${widgetId}.tt-grid {
-        column-count: 1 !important;
-      }
-    }
-
-    /* Carousel styles */
-    #tt-widget-${widgetId} .tt-carousel {
-      position: relative !important;
-      overflow: hidden !important;
-    }
-
-    #tt-widget-${widgetId} .tt-carousel .tt-carousel-inner {
-      display: flex !important;
-      transition: transform 0.3s ease !important;
-    }
-
-    #tt-widget-${widgetId} .tt-carousel .tt-testimonial {
-      flex: 0 0 100% !important;
-      margin-bottom: 0 !important;
-    }
-
-    #tt-widget-${widgetId} .tt-carousel .tt-nav {
-      position: absolute !important;
-      top: 50% !important;
-      transform: translateY(-50%) !important;
-      background: ${bgColor} !important;
-      border: 1px solid ${borderColor} !important;
-      border-radius: 50% !important;
-      width: 36px !important;
-      height: 36px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: pointer !important;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-      color: ${textColor} !important;
-      font-size: 20px !important;
-    }
-
-    #tt-widget-${widgetId} .tt-carousel .tt-nav.prev {
-      left: 16px !important;
-    }
-
-    #tt-widget-${widgetId} .tt-carousel .tt-nav.next {
-      right: 16px !important;
-    }
-
-    /* Badge styles */
-    #tt-widget-${widgetId} .tt-badge {
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 8px !important;
-      background: ${bgColor} !important;
-      border: 1px solid ${borderColor} !important;
-      border-radius: 100px !important;
-      padding: 8px 16px !important;
-      font-size: 14px !important;
-      font-weight: 600 !important;
-      color: ${textColor} !important;
-    }
-  `
-
-  // Generate HTML
+  // Generate HTML (simplified class names for Shadow DOM)
   let html = ''
 
   switch (widget.type) {
     case 'wall':
-      html = `<div class="tt-widget-${widgetId} tt-wall">${testimonials.map((t) => renderTestimonial(t, config)).join('')}</div>`
+      html = `<div class="tt-wall">${testimonials.map((t) => renderTestimonial(t, config)).join('')}</div>`
       break
 
     case 'grid':
-      html = `<div class="tt-widget-${widgetId} tt-grid">${testimonials
+      html = `<div class="tt-grid">${testimonials
         .slice(0, config.display.itemsPerPage || 9)
         .map((t) => renderTestimonial(t, config))
         .join('')}</div>`
@@ -421,7 +185,7 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
 
     case 'carousel':
       html = `
-        <div class="tt-widget-${widgetId} tt-carousel">
+        <div class="tt-carousel">
           <div class="tt-carousel-inner">
             ${testimonials.map((t) => renderTestimonial(t, config)).join('')}
           </div>
@@ -439,7 +203,7 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
 
     case 'single':
       html = testimonials[0]
-        ? `<div class="tt-widget-${widgetId}">${renderTestimonial(testimonials[0], config)}</div>`
+        ? `<div class="tt-single">${renderTestimonial(testimonials[0], config)}</div>`
         : ''
       break
 
@@ -450,7 +214,7 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
             testimonials.length
           : 0
       html = `
-        <div class="tt-widget-${widgetId} tt-badge">
+        <div class="tt-badge">
           <div class="tt-rating">
             ${[1, 2, 3, 4, 5]
               .map(
@@ -468,103 +232,277 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
       break
   }
 
-  // Generate JavaScript
+  // Generate Shadow DOM CSS (simplified selectors since we're isolated)
+  const shadowCss = `
+    :host {
+      display: block;
+      font-family: ${config.styling.fontFamily || 'system-ui'}, -apple-system, sans-serif;
+      color: ${textColor};
+      line-height: 1.5;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    .tt-wall, .tt-grid {
+      column-count: 3;
+      column-gap: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .tt-wall, .tt-grid {
+        column-count: 2;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .tt-wall, .tt-grid {
+        column-count: 1;
+      }
+    }
+
+    .tt-testimonial {
+      background: ${bgColor};
+      border: 1px solid ${borderColor};
+      border-radius: ${borderRadius};
+      padding: ${padding};
+      margin-bottom: 16px;
+      break-inside: avoid;
+      display: inline-block;
+      width: 100%;
+      ${shadow !== 'none' ? `box-shadow: ${shadow};` : ''}
+    }
+
+    .tt-rating {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .tt-star {
+      width: 16px;
+      height: 16px;
+      fill: #FFC107;
+    }
+
+    .tt-star.empty {
+      fill: #E0E0E0;
+    }
+
+    .tt-content {
+      line-height: 1.6;
+      margin-bottom: 16px;
+      color: ${textColor};
+      font-size: 14px;
+    }
+
+    .tt-read-more {
+      background: none;
+      border: none;
+      color: ${primaryColor};
+      cursor: pointer;
+      font-size: inherit;
+      padding: 0;
+      margin-left: 4px;
+      text-decoration: underline;
+    }
+
+    .tt-video {
+      margin-bottom: 16px;
+    }
+
+    .tt-video video {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .tt-customer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tt-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #E0E0E0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .tt-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .tt-customer-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tt-customer-name {
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: ${textColor};
+      font-size: 14px;
+    }
+
+    .tt-customer-company {
+      font-size: 13px;
+      opacity: 0.7;
+      color: ${textColor};
+    }
+
+    .tt-date {
+      font-size: 12px;
+      opacity: 0.6;
+      margin-top: 8px;
+    }
+
+    /* Carousel */
+    .tt-carousel {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tt-carousel .tt-carousel-inner {
+      display: flex;
+      transition: transform 0.3s ease;
+    }
+
+    .tt-carousel .tt-testimonial {
+      flex: 0 0 100%;
+      margin-bottom: 0;
+    }
+
+    .tt-carousel .tt-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: ${bgColor};
+      border: 1px solid ${borderColor};
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      color: ${textColor};
+      font-size: 20px;
+    }
+
+    .tt-carousel .tt-nav.prev { left: 16px; }
+    .tt-carousel .tt-nav.next { right: 16px; }
+
+    /* Badge */
+    .tt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: ${bgColor};
+      border: 1px solid ${borderColor};
+      border-radius: 100px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: ${textColor};
+    }
+  `
+
+  // Generate JavaScript with Shadow DOM
   const js = `console.log('[Testimonial Tiger] Widget script loaded - ID: ${widgetId}');
 (function() {
-  console.log('[Testimonial Tiger] Initializing widget ${widgetId}');
-  
+  console.log('[Testimonial Tiger] Initializing widget with Shadow DOM');
+
   var widgetInitialized = false;
   var observerActive = false;
-  
-  // Function to initialize the widget
+
+  // Function to initialize the widget using Shadow DOM
   function initWidget() {
     if (widgetInitialized) {
       console.log('[Testimonial Tiger] Widget already initialized');
       return true;
     }
-    
+
     console.log('[Testimonial Tiger] Attempting to initialize widget ${widgetId}');
-    
-    // Add styles if not already added
-    if (!document.getElementById('tt-styles-${widgetId}')) {
-      var style = document.createElement('style');
-      style.id = 'tt-styles-${widgetId}';
-      style.textContent = \`${css}\`;
-      
-      // Try to add to head, fallback to body if head not available
-      if (document.head) {
-        document.head.appendChild(style);
-      } else if (document.body) {
-        document.body.appendChild(style);
-      } else {
-        console.warn('[Testimonial Tiger] Neither head nor body available for styles');
-        return false;
-      }
-      console.log('[Testimonial Tiger] Styles added');
-    }
-    
-    // Find container - try multiple methods
+
+    // Find container
     var container = document.getElementById('tt-widget-${widgetId}');
-    
-    // If not found, try querySelector as backup
     if (!container) {
       container = document.querySelector('#tt-widget-${widgetId}');
     }
-    
-    // If still not found, try with escaped ID for special cases
     if (!container) {
-      try {
-        container = document.querySelector('[id="tt-widget-${widgetId}"]');
-      } catch(e) {
-        console.log('[Testimonial Tiger] querySelector with attribute failed:', e);
-      }
+      container = document.querySelector('[id="tt-widget-${widgetId}"]');
     }
-    
+
     console.log('[Testimonial Tiger] Container search result:', container);
-    
+
     if (container) {
-      // Check if container already has content (avoid re-initialization)
-      if (container.querySelector('.tt-widget-${widgetId}')) {
+      // Check if shadow root already exists
+      if (container.shadowRoot) {
         console.log('[Testimonial Tiger] Widget already rendered');
         widgetInitialized = true;
         return true;
       }
-      
+
       try {
-        container.innerHTML = \`${html.replace(/\`/g, '\\`')}\`;
-        console.log('[Testimonial Tiger] Widget HTML injected successfully');
+        // Create Shadow DOM for complete style isolation
+        var shadow = container.attachShadow({ mode: 'open' });
+
+        // Add styles to shadow root
+        var style = document.createElement('style');
+        style.textContent = \`${shadowCss.replace(/\\/g, '\\\\').replace(/\`/g, '\\`')}\`;
+        shadow.appendChild(style);
+
+        // Add HTML to shadow root
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = \`${html.replace(/\\/g, '\\\\').replace(/\`/g, '\\`')}\`;
+        shadow.appendChild(wrapper.firstElementChild || wrapper);
+
+        console.log('[Testimonial Tiger] Widget rendered in Shadow DOM');
         widgetInitialized = true;
-        
+
         // Initialize carousel if needed
         ${
           widget.type === 'carousel' && testimonials.length > 1
             ? `
         setTimeout(function() {
           var currentSlide = 0;
-          var slides = container.querySelectorAll('.tt-testimonial');
-          var inner = container.querySelector('.tt-carousel-inner');
-          var prevBtn = container.querySelector('.tt-nav.prev');
-          var nextBtn = container.querySelector('.tt-nav.next');
-          
+          var slides = shadow.querySelectorAll('.tt-testimonial');
+          var inner = shadow.querySelector('.tt-carousel-inner');
+          var prevBtn = shadow.querySelector('.tt-nav.prev');
+          var nextBtn = shadow.querySelector('.tt-nav.next');
+
           function showSlide(index) {
             if (inner) {
               currentSlide = (index + slides.length) % slides.length;
               inner.style.transform = 'translateX(-' + (currentSlide * 100) + '%)';
             }
           }
-          
+
           if (prevBtn) {
             prevBtn.addEventListener('click', function() {
               showSlide(currentSlide - 1);
             });
           }
-          
+
           if (nextBtn) {
             nextBtn.addEventListener('click', function() {
               showSlide(currentSlide + 1);
             });
           }
-          
+
           // Auto-play
           if (inner && slides.length > 1) {
             setInterval(function() {
@@ -575,10 +513,10 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
         `
             : ''
         }
-        
+
         return true;
       } catch(e) {
-        console.error('[Testimonial Tiger] Error injecting HTML:', e);
+        console.error('[Testimonial Tiger] Error creating Shadow DOM:', e);
         return false;
       }
     } else {
