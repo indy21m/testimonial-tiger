@@ -23,6 +23,11 @@ interface FormPreviewProps {
         required: boolean
         options?: string[]
       }>
+      prePrompt?: {
+        enabled: boolean
+        title: string
+        questions: string[]
+      }
       styling: {
         theme: 'minimal' | 'modern' | 'bold' | 'custom'
         primaryColor: string
@@ -85,6 +90,35 @@ export function FormPreview({ form }: FormPreviewProps) {
           <h2 className="mb-2 text-2xl font-bold">{form.config.title}</h2>
           <p className="opacity-90">{form.config.description}</p>
         </div>
+
+        {/* Pre-Testimonial Prompt */}
+        {form.config.prePrompt?.enabled &&
+          form.config.prePrompt.questions.length > 0 && (
+            <div
+              className="border-b border-gray-100 bg-gray-50 p-6"
+              style={{ borderRadius: `${borderRadius} ${borderRadius} 0 0` }}
+            >
+              <h3 className="mb-3 font-semibold text-gray-800">
+                {form.config.prePrompt.title}
+              </h3>
+              <ul className="space-y-2">
+                {form.config.prePrompt.questions.map((question, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-sm text-gray-600"
+                  >
+                    <span
+                      className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium text-white"
+                      style={{ backgroundColor: styling.primaryColor }}
+                    >
+                      {index + 1}
+                    </span>
+                    {question}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
         {/* Form Content */}
         <div className="space-y-4 p-6">
