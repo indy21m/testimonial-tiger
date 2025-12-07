@@ -153,12 +153,32 @@ function generateWidgetJS(widget: any, testimonials: any[]) {
   const { config } = widget
   const widgetId = widget.id
 
-  // Extract styling values
-  const bgColor = config.styling.backgroundColor || '#ffffff'
-  const textColor = config.styling.textColor || '#1f2937'
-  const borderColor = config.styling.borderColor || '#e5e7eb'
+  // Theme presets
+  const themes = {
+    light: {
+      backgroundColor: '#ffffff',
+      textColor: '#1f2937',
+      borderColor: '#e5e7eb',
+      primaryColor: '#3b82f6',
+    },
+    dark: {
+      backgroundColor: '#1f2937',
+      textColor: '#f9fafb',
+      borderColor: '#374151',
+      primaryColor: '#60a5fa',
+    },
+  }
+
+  // Get theme or use custom colors
+  const theme = config.styling.theme || 'light'
+  const themeColors = themes[theme as keyof typeof themes]
+
+  // Extract styling values based on theme
+  const bgColor = themeColors?.backgroundColor || config.styling.backgroundColor || '#ffffff'
+  const textColor = themeColors?.textColor || config.styling.textColor || '#1f2937'
+  const borderColor = themeColors?.borderColor || config.styling.borderColor || '#e5e7eb'
+  const primaryColor = themeColors?.primaryColor || config.styling.primaryColor || '#3b82f6'
   const borderRadius = config.styling.borderRadius || '8px'
-  const primaryColor = config.styling.primaryColor || '#3b82f6'
   const padding = config.styling.layout === 'compact' ? '12px' : config.styling.layout === 'spacious' ? '24px' : '16px'
   const shadow = config.styling.shadow === 'sm'
     ? '0 1px 3px rgba(0,0,0,0.12)'
