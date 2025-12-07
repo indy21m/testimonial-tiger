@@ -21,19 +21,21 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 
+type FormSettings = {
+  requireEmail: boolean
+  requireName: boolean
+  allowVideo: boolean
+  allowImage: boolean
+  maxVideoLength: number
+  autoApprove: boolean
+  sendEmailNotification: boolean
+  redirectUrl?: string
+  successMessage: string
+}
+
 interface FormSettingsEditorProps {
-  settings: {
-    requireEmail: boolean
-    requireName: boolean
-    allowVideo: boolean
-    allowImage: boolean
-    maxVideoLength: number
-    autoApprove: boolean
-    sendEmailNotification: boolean
-    redirectUrl?: string
-    successMessage: string
-  }
-  onChange: (settings: Record<string, unknown>) => void
+  settings: FormSettings
+  onChange: (settings: FormSettings) => void
 }
 
 export function FormSettingsEditor({

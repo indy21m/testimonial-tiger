@@ -4,6 +4,46 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/trpc/client'
+
+// Type for widget config - mirrors the schema definition
+type WidgetConfig = {
+  display: {
+    showRating: boolean
+    showDate: boolean
+    showPhoto: boolean
+    showCompany: boolean
+    maxLength?: number
+    itemsPerPage?: number
+    truncateLength?: number
+    showReadMore?: boolean
+  }
+  filters: {
+    formIds?: string[]
+    onlyFeatured: boolean
+    minRating?: number
+    maxItems?: number
+    selectedTestimonialIds?: string[]
+    testimonialOrder?: string[]
+  }
+  styling: {
+    theme: 'light' | 'dark' | 'custom'
+    layout: 'compact' | 'comfortable' | 'spacious'
+    primaryColor: string
+    backgroundColor: string
+    textColor: string
+    borderColor: string
+    borderRadius: string
+    shadow: 'none' | 'sm' | 'md' | 'lg'
+    fontFamily: string
+    customCSS?: string
+    fallbackAvatar?: {
+      type: 'initials' | 'placeholder'
+      backgroundColor?: string
+      textColor?: string
+      placeholderUrl?: string
+    }
+  }
+}
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -125,6 +165,19 @@ export default function WidgetEditorPage() {
     api.widget.getTestimonials.useQuery({ widgetId })
   const utils = api.useUtils()
 
+  // Local config state for immediate UI updates
+  const [localConfig, setLocalConfig] = useState<WidgetConfig | null>(null)
+
+  // Sync local config when server data loads/changes
+  useEffect(() => {
+    if (widget?.config && !localConfig) {
+      setLocalConfig(widget.config)
+    }
+  }, [widget?.config, localConfig])
+
+  // Use local config with fallback to server config
+  const config = localConfig || widget?.config
+
   const updateMutation = api.widget.update.useMutation({
     onSuccess: async () => {
       await refetch()
@@ -151,9 +204,10 @@ export default function WidgetEditorPage() {
 
   const handleConfigUpdate = useCallback(
     (path: string[], value: any, immediate: boolean = false) => {
-      if (!widget) return
+      if (!config) return
 
-      const newConfig = { ...widget.config }
+      // Deep clone to avoid mutation issues
+      const newConfig = JSON.parse(JSON.stringify(config))
       let current: any = newConfig
 
       for (let i = 0; i < path.length - 1; i++) {
@@ -168,13 +222,16 @@ export default function WidgetEditorPage() {
         current[lastKey] = value
       }
 
+      // Update local state immediately for responsive UI
+      setLocalConfig(newConfig)
+
       if (immediate) {
         updateMutation.mutate({ id: widgetId, config: newConfig })
       } else {
         debouncedUpdate({ config: newConfig })
       }
     },
-    [widget, debouncedUpdate, widgetId]
+    [config, debouncedUpdate, widgetId]
   )
 
   const handleDomainsUpdate = useCallback(
@@ -217,23 +274,23 @@ export default function WidgetEditorPage() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
-    if (over && active.id !== over.id) {
+    if (over && active.id !== over.id && config) {
       setTestimonialOrder((items) => {
         const oldIndex = items.indexOf(active.id as string)
         const newIndex = items.indexOf(over.id as string)
         const newOrder = arrayMove(items, oldIndex, newIndex)
 
-        // Update widget config, preserving selectedTestimonialIds
-        debouncedUpdate({
-          config: {
-            ...widget!.config,
-            filters: {
-              ...widget!.config.filters,
-              selectedTestimonialIds: selectedTestimonialIds,
-              testimonialOrder: newOrder,
-            },
+        // Update local config immediately
+        const newConfig = {
+          ...config,
+          filters: {
+            ...config.filters,
+            selectedTestimonialIds: selectedTestimonialIds,
+            testimonialOrder: newOrder,
           },
-        })
+        }
+        setLocalConfig(newConfig)
+        debouncedUpdate({ config: newConfig })
 
         return newOrder
       })
@@ -241,22 +298,24 @@ export default function WidgetEditorPage() {
   }
 
   const toggleTestimonial = (testimonialId: string) => {
+    if (!config) return
+
     setSelectedTestimonialIds((prev) => {
       const newIds = prev.includes(testimonialId)
         ? prev.filter((id) => id !== testimonialId)
         : [...prev, testimonialId]
 
-      // Update widget config
-      debouncedUpdate({
-        config: {
-          ...widget!.config,
-          filters: {
-            ...widget!.config.filters,
-            selectedTestimonialIds: newIds,
-            testimonialOrder: testimonialOrder,
-          },
+      // Update local config immediately
+      const newConfig = {
+        ...config,
+        filters: {
+          ...config.filters,
+          selectedTestimonialIds: newIds,
+          testimonialOrder: testimonialOrder,
         },
-      })
+      }
+      setLocalConfig(newConfig)
+      debouncedUpdate({ config: newConfig })
 
       return newIds
     })
@@ -268,7 +327,7 @@ export default function WidgetEditorPage() {
   }
 
   const toggleAll = () => {
-    if (!allTestimonials) return
+    if (!allTestimonials || !config) return
 
     const allSelected = selectedTestimonialIds.length === allTestimonials.length
     const newIds = allSelected ? [] : allTestimonials.map((t) => t.id)
@@ -276,27 +335,27 @@ export default function WidgetEditorPage() {
     setSelectedTestimonialIds(newIds)
 
     // Update order to include all testimonials if selecting all
+    let newOrder = testimonialOrder
     if (!allSelected) {
       const currentOrder = testimonialOrder
       const missingIds = newIds.filter((id) => !currentOrder.includes(id))
-      setTestimonialOrder([...currentOrder, ...missingIds])
+      newOrder = [...currentOrder, ...missingIds]
+      setTestimonialOrder(newOrder)
     }
 
-    debouncedUpdate({
-      config: {
-        ...widget!.config,
-        filters: {
-          ...widget!.config.filters,
-          selectedTestimonialIds: newIds,
-          testimonialOrder: allSelected
-            ? testimonialOrder
-            : [
-                ...testimonialOrder,
-                ...newIds.filter((id) => !testimonialOrder.includes(id)),
-              ],
-        },
+    // Update local config immediately
+    const newConfig = {
+      ...config,
+      filters: {
+        ...config.filters,
+        selectedTestimonialIds: newIds,
+        testimonialOrder: allSelected
+          ? testimonialOrder
+          : newOrder,
       },
-    })
+    }
+    setLocalConfig(newConfig)
+    debouncedUpdate({ config: newConfig })
   }
 
   const copyEmbedCode = () => {
@@ -335,15 +394,17 @@ export default function WidgetEditorPage() {
       })
 
       // Update widget config with uploaded avatar URL
-      handleConfigUpdate(
-        ['styling', 'fallbackAvatar'],
-        {
-          ...widget!.config.styling.fallbackAvatar,
-          type: 'placeholder',
-          placeholderUrl: blob.url,
-        },
-        true
-      )
+      if (config) {
+        handleConfigUpdate(
+          ['styling', 'fallbackAvatar'],
+          {
+            ...config.styling.fallbackAvatar,
+            type: 'placeholder',
+            placeholderUrl: blob.url,
+          },
+          true
+        )
+      }
 
       toast.success('Avatar uploaded successfully')
     } catch (error) {
@@ -357,7 +418,7 @@ export default function WidgetEditorPage() {
     }
   }
 
-  if (!widget) {
+  if (!widget || !config) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -514,7 +575,7 @@ export default function WidgetEditorPage() {
                     <Label htmlFor="show-rating">Show Rating Stars</Label>
                     <Switch
                       id="show-rating"
-                      checked={widget.config.display.showRating}
+                      checked={config.display.showRating}
                       onCheckedChange={(checked) =>
                         handleConfigUpdate(['display', 'showRating'], checked)
                       }
@@ -524,7 +585,7 @@ export default function WidgetEditorPage() {
                     <Label htmlFor="show-photo">Show Customer Photo</Label>
                     <Switch
                       id="show-photo"
-                      checked={widget.config.display.showPhoto}
+                      checked={config.display.showPhoto}
                       onCheckedChange={(checked) =>
                         handleConfigUpdate(['display', 'showPhoto'], checked)
                       }
@@ -534,7 +595,7 @@ export default function WidgetEditorPage() {
                     <Label htmlFor="show-company">Show Company Name</Label>
                     <Switch
                       id="show-company"
-                      checked={widget.config.display.showCompany}
+                      checked={config.display.showCompany}
                       onCheckedChange={(checked) =>
                         handleConfigUpdate(['display', 'showCompany'], checked)
                       }
@@ -544,7 +605,7 @@ export default function WidgetEditorPage() {
                     <Label htmlFor="show-date">Show Submission Date</Label>
                     <Switch
                       id="show-date"
-                      checked={widget.config.display.showDate}
+                      checked={config.display.showDate}
                       onCheckedChange={(checked) =>
                         handleConfigUpdate(['display', 'showDate'], checked)
                       }
@@ -600,7 +661,7 @@ export default function WidgetEditorPage() {
                     </Label>
                     <Switch
                       id="show-read-more"
-                      checked={widget.config.display.showReadMore ?? true}
+                      checked={config.display.showReadMore ?? true}
                       onCheckedChange={(checked) =>
                         handleConfigUpdate(['display', 'showReadMore'], checked)
                       }
@@ -619,7 +680,7 @@ export default function WidgetEditorPage() {
                       <Label>Items Per Page</Label>
                       <div className="mt-2 flex items-center gap-2">
                         <Slider
-                          value={[widget.config.display.itemsPerPage || 9]}
+                          value={[config.display.itemsPerPage || 9]}
                           onValueChange={([value]) =>
                             handleConfigUpdate(
                               ['display', 'itemsPerPage'],
@@ -632,7 +693,7 @@ export default function WidgetEditorPage() {
                           className="flex-1"
                         />
                         <span className="w-12 text-right text-sm">
-                          {widget.config.display.itemsPerPage || 9}
+                          {config.display.itemsPerPage || 9}
                         </span>
                       </div>
                     </div>
@@ -654,7 +715,7 @@ export default function WidgetEditorPage() {
                     <Label htmlFor="only-featured">Only Featured</Label>
                     <Switch
                       id="only-featured"
-                      checked={widget.config.filters.onlyFeatured}
+                      checked={config.filters.onlyFeatured}
                       onCheckedChange={(checked) =>
                         handleConfigUpdate(['filters', 'onlyFeatured'], checked)
                       }
@@ -664,7 +725,7 @@ export default function WidgetEditorPage() {
                     <Label>Minimum Rating</Label>
                     <div className="mt-2 flex items-center gap-2">
                       <Slider
-                        value={[widget.config.filters.minRating || 1]}
+                        value={[config.filters.minRating || 1]}
                         onValueChange={([value]) =>
                           handleConfigUpdate(['filters', 'minRating'], value)
                         }
@@ -674,7 +735,7 @@ export default function WidgetEditorPage() {
                         className="flex-1"
                       />
                       <span className="w-12 text-right text-sm">
-                        {widget.config.filters.minRating || 1}★
+                        {config.filters.minRating || 1}★
                       </span>
                     </div>
                   </div>
@@ -682,7 +743,7 @@ export default function WidgetEditorPage() {
                     <Label>Maximum Items</Label>
                     <div className="mt-2 flex items-center gap-2">
                       <Slider
-                        value={[widget.config.filters.maxItems || 20]}
+                        value={[config.filters.maxItems || 20]}
                         onValueChange={([value]) =>
                           handleConfigUpdate(['filters', 'maxItems'], value)
                         }
@@ -692,7 +753,7 @@ export default function WidgetEditorPage() {
                         className="flex-1"
                       />
                       <span className="w-12 text-right text-sm">
-                        {widget.config.filters.maxItems || 20}
+                        {config.filters.maxItems || 20}
                       </span>
                     </div>
                   </div>
@@ -713,11 +774,11 @@ export default function WidgetEditorPage() {
                         <Checkbox
                           id={`form-${form.id}`}
                           checked={
-                            widget.config.filters.formIds?.includes(form.id) ||
+                            config.filters.formIds?.includes(form.id) ||
                             false
                           }
                           onCheckedChange={(checked) => {
-                            const formIds = widget.config.filters.formIds || []
+                            const formIds = config.filters.formIds || []
                             if (checked) {
                               handleConfigUpdate(
                                 ['filters', 'formIds'],
@@ -753,7 +814,7 @@ export default function WidgetEditorPage() {
                   <div>
                     <Label>Theme Mode</Label>
                     <Select
-                      value={widget.config.styling.theme}
+                      value={config.styling.theme}
                       onValueChange={(value: any) =>
                         handleConfigUpdate(['styling', 'theme'], value)
                       }
@@ -769,14 +830,14 @@ export default function WidgetEditorPage() {
                     </Select>
                   </div>
 
-                  {widget.config.styling.theme === 'custom' && (
+                  {config.styling.theme === 'custom' && (
                     <>
                       <div>
                         <Label>Primary Color</Label>
                         <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
-                            value={widget.config.styling.primaryColor}
+                            value={config.styling.primaryColor}
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'primaryColor'],
@@ -786,7 +847,7 @@ export default function WidgetEditorPage() {
                             className="w-20"
                           />
                           <Input
-                            value={widget.config.styling.primaryColor}
+                            value={config.styling.primaryColor}
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'primaryColor'],
@@ -801,7 +862,7 @@ export default function WidgetEditorPage() {
                         <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
-                            value={widget.config.styling.backgroundColor}
+                            value={config.styling.backgroundColor}
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'backgroundColor'],
@@ -811,7 +872,7 @@ export default function WidgetEditorPage() {
                             className="w-20"
                           />
                           <Input
-                            value={widget.config.styling.backgroundColor}
+                            value={config.styling.backgroundColor}
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'backgroundColor'],
@@ -826,7 +887,7 @@ export default function WidgetEditorPage() {
                         <div className="mt-2 flex gap-2">
                           <Input
                             type="color"
-                            value={widget.config.styling.textColor}
+                            value={config.styling.textColor}
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'textColor'],
@@ -836,7 +897,7 @@ export default function WidgetEditorPage() {
                             className="w-20"
                           />
                           <Input
-                            value={widget.config.styling.textColor}
+                            value={config.styling.textColor}
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'textColor'],
@@ -859,7 +920,7 @@ export default function WidgetEditorPage() {
                   <div>
                     <Label>Density</Label>
                     <Select
-                      value={widget.config.styling.layout}
+                      value={config.styling.layout}
                       onValueChange={(value: any) =>
                         handleConfigUpdate(['styling', 'layout'], value)
                       }
@@ -877,7 +938,7 @@ export default function WidgetEditorPage() {
                   <div>
                     <Label>Shadow</Label>
                     <Select
-                      value={widget.config.styling.shadow}
+                      value={config.styling.shadow}
                       onValueChange={(value: any) =>
                         handleConfigUpdate(['styling', 'shadow'], value)
                       }
@@ -896,7 +957,7 @@ export default function WidgetEditorPage() {
                   <div>
                     <Label>Border Radius</Label>
                     <Input
-                      value={widget.config.styling.borderRadius}
+                      value={config.styling.borderRadius}
                       onChange={(e) =>
                         handleConfigUpdate(
                           ['styling', 'borderRadius'],
@@ -922,11 +983,11 @@ export default function WidgetEditorPage() {
                     <Label>Avatar Type</Label>
                     <Select
                       value={
-                        widget.config.styling.fallbackAvatar?.type || 'initials'
+                        config.styling.fallbackAvatar?.type || 'initials'
                       }
                       onValueChange={(value: 'initials' | 'placeholder') =>
                         handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                          ...widget.config.styling.fallbackAvatar,
+                          ...config.styling.fallbackAvatar,
                           type: value,
                         })
                       }
@@ -945,7 +1006,7 @@ export default function WidgetEditorPage() {
                     </Select>
                   </div>
 
-                  {widget.config.styling.fallbackAvatar?.type ===
+                  {config.styling.fallbackAvatar?.type ===
                     'initials' && (
                     <>
                       <div>
@@ -954,14 +1015,14 @@ export default function WidgetEditorPage() {
                           <Input
                             type="color"
                             value={
-                              widget.config.styling.fallbackAvatar
+                              config.styling.fallbackAvatar
                                 ?.backgroundColor || '#3b82f6'
                             }
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'fallbackAvatar'],
                                 {
-                                  ...widget.config.styling.fallbackAvatar,
+                                  ...config.styling.fallbackAvatar,
                                   backgroundColor: e.target.value,
                                 }
                               )
@@ -970,14 +1031,14 @@ export default function WidgetEditorPage() {
                           />
                           <Input
                             value={
-                              widget.config.styling.fallbackAvatar
+                              config.styling.fallbackAvatar
                                 ?.backgroundColor || '#3b82f6'
                             }
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'fallbackAvatar'],
                                 {
-                                  ...widget.config.styling.fallbackAvatar,
+                                  ...config.styling.fallbackAvatar,
                                   backgroundColor: e.target.value,
                                 }
                               )
@@ -991,14 +1052,14 @@ export default function WidgetEditorPage() {
                           <Input
                             type="color"
                             value={
-                              widget.config.styling.fallbackAvatar?.textColor ||
+                              config.styling.fallbackAvatar?.textColor ||
                               '#FFFFFF'
                             }
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'fallbackAvatar'],
                                 {
-                                  ...widget.config.styling.fallbackAvatar,
+                                  ...config.styling.fallbackAvatar,
                                   textColor: e.target.value,
                                 }
                               )
@@ -1007,14 +1068,14 @@ export default function WidgetEditorPage() {
                           />
                           <Input
                             value={
-                              widget.config.styling.fallbackAvatar?.textColor ||
+                              config.styling.fallbackAvatar?.textColor ||
                               '#FFFFFF'
                             }
                             onChange={(e) =>
                               handleConfigUpdate(
                                 ['styling', 'fallbackAvatar'],
                                 {
-                                  ...widget.config.styling.fallbackAvatar,
+                                  ...config.styling.fallbackAvatar,
                                   textColor: e.target.value,
                                 }
                               )
@@ -1025,7 +1086,7 @@ export default function WidgetEditorPage() {
                     </>
                   )}
 
-                  {widget.config.styling.fallbackAvatar?.type ===
+                  {config.styling.fallbackAvatar?.type ===
                     'placeholder' && (
                     <div className="space-y-3">
                       <div>
@@ -1060,13 +1121,13 @@ export default function WidgetEditorPage() {
                         </div>
                       </div>
 
-                      {widget.config.styling.fallbackAvatar?.placeholderUrl && (
+                      {config.styling.fallbackAvatar?.placeholderUrl && (
                         <div className="space-y-2">
                           <Label>Current Placeholder</Label>
                           <div className="flex items-center gap-3 rounded-lg border p-3">
                             <img
                               src={
-                                widget.config.styling.fallbackAvatar
+                                config.styling.fallbackAvatar
                                   .placeholderUrl
                               }
                               alt="Placeholder avatar"
@@ -1074,7 +1135,7 @@ export default function WidgetEditorPage() {
                             />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm text-gray-600">
-                                {widget.config.styling.fallbackAvatar.placeholderUrl
+                                {config.styling.fallbackAvatar.placeholderUrl
                                   .split('/')
                                   .pop()}
                               </p>
@@ -1087,7 +1148,7 @@ export default function WidgetEditorPage() {
                                 handleConfigUpdate(
                                   ['styling', 'fallbackAvatar'],
                                   {
-                                    ...widget.config.styling.fallbackAvatar,
+                                    ...config.styling.fallbackAvatar,
                                     placeholderUrl: '',
                                   },
                                   true
@@ -1104,12 +1165,12 @@ export default function WidgetEditorPage() {
                         <Label>Or Use Image URL</Label>
                         <Input
                           value={
-                            widget.config.styling.fallbackAvatar
+                            config.styling.fallbackAvatar
                               ?.placeholderUrl || ''
                           }
                           onChange={(e) =>
                             handleConfigUpdate(['styling', 'fallbackAvatar'], {
-                              ...widget.config.styling.fallbackAvatar,
+                              ...config.styling.fallbackAvatar,
                               placeholderUrl: e.target.value,
                             })
                           }
@@ -1198,13 +1259,13 @@ subdomain.example.com"
                 widget={{
                   ...widget,
                   config: {
-                    ...widget.config,
+                    ...config,
                     display: {
-                      ...widget.config.display,
+                      ...config.display,
                       truncateLength: truncateLength,
                     },
                     filters: {
-                      ...widget.config.filters,
+                      ...config.filters,
                       selectedTestimonialIds: selectedTestimonialIds,
                       testimonialOrder: testimonialOrder,
                     },

@@ -1,10 +1,49 @@
 'use client'
 
-import { useState, useCallback, useMemo, use } from 'react'
+import { useState, useCallback, useMemo, use, useEffect } from 'react'
 import Link from 'next/link'
 import { debounce } from 'lodash'
 import { motion } from 'framer-motion'
 import { api } from '@/lib/trpc/client'
+
+// Type for form config - mirrors the schema definition
+type FormConfig = {
+  title: string
+  description: string
+  questions: Array<{
+    id: string
+    type: 'text' | 'textarea' | 'rating' | 'select'
+    label: string
+    placeholder?: string
+    required: boolean
+    options?: string[]
+  }>
+  settings: {
+    requireEmail: boolean
+    requireName: boolean
+    allowVideo: boolean
+    allowImage: boolean
+    maxVideoLength: number
+    autoApprove: boolean
+    sendEmailNotification: boolean
+    redirectUrl?: string
+    successMessage: string
+  }
+  prePrompt?: {
+    enabled: boolean
+    title: string
+    questions: string[]
+  }
+  styling: {
+    theme: 'minimal' | 'modern' | 'bold' | 'custom'
+    primaryColor: string
+    backgroundColor: string
+    fontFamily: string
+    borderRadius: 'none' | 'small' | 'medium' | 'large'
+    showLogo: boolean
+    logoUrl?: string
+  }
+}
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -44,25 +83,43 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
     },
   })
 
+  // Local config state for immediate UI updates
+  const [localConfig, setLocalConfig] = useState<FormConfig | null>(null)
+
+  // Sync local config when server data loads/changes
+  useEffect(() => {
+    if (form?.config && !localConfig) {
+      setLocalConfig(form.config)
+    }
+  }, [form?.config, localConfig])
+
   // Debounced update function
   const debouncedUpdate = useMemo(
     () =>
-      debounce((updates: Record<string, unknown>) => {
+      debounce((updates: { config: FormConfig }) => {
         updateForm.mutate({ id, ...updates })
       }, 1000),
     [id] // Remove updateForm from dependencies to prevent recreating on each render
   )
 
   const handleConfigUpdate = useCallback(
-    (updates: Record<string, unknown>) => {
+    (updates: Partial<FormConfig>) => {
       setHasUnsavedChanges(true)
-      const newConfig = { ...form?.config, ...updates }
-      debouncedUpdate({ config: newConfig })
+      // Update local state immediately for responsive UI
+      setLocalConfig(prev => prev ? { ...prev, ...updates } : null)
+      // Debounce the API call
+      if (localConfig) {
+        const newConfig = { ...localConfig, ...updates }
+        debouncedUpdate({ config: newConfig })
+      }
     },
-    [form?.config, debouncedUpdate]
+    [localConfig, debouncedUpdate]
   )
 
-  if (isLoading || !form) {
+  // Use local config with fallback to server config
+  const config = localConfig || form?.config
+
+  if (isLoading || !form || !config) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -153,7 +210,7 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                   <div>
                     <Label>Form Title</Label>
                     <Input
-                      value={form.config.title}
+                      value={config.title}
                       onChange={(e) =>
                         handleConfigUpdate({ title: e.target.value })
                       }
@@ -164,7 +221,7 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                   <div>
                     <Label>Description</Label>
                     <Textarea
-                      value={form.config.description}
+                      value={config.description}
                       onChange={(e) =>
                         handleConfigUpdate({ description: e.target.value })
                       }
@@ -190,9 +247,9 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                     <input
                       id="prompt-enabled"
                       type="checkbox"
-                      checked={form.config.prePrompt?.enabled || false}
+                      checked={config.prePrompt?.enabled || false}
                       onChange={(e) => {
-                        const currentPrompt = form.config.prePrompt || {
+                        const currentPrompt = config.prePrompt || {
                           enabled: false,
                           title: 'Before you start...',
                           questions: [
@@ -212,23 +269,28 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                     />
                   </div>
 
-                  {form.config.prePrompt?.enabled && (
+                  {config.prePrompt?.enabled && (
                     <>
                       <div>
                         <Label>Prompt Title</Label>
                         <Input
                           value={
-                            form.config.prePrompt?.title ||
+                            config.prePrompt?.title ||
                             'Before you start...'
                           }
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const currentPrompt = config.prePrompt || {
+                              enabled: true,
+                              title: 'Before you start...',
+                              questions: [],
+                            }
                             handleConfigUpdate({
                               prePrompt: {
-                                ...form.config.prePrompt,
+                                ...currentPrompt,
                                 title: e.target.value,
                               },
                             })
-                          }
+                          }}
                           placeholder="Before you start..."
                         />
                       </div>
@@ -237,18 +299,23 @@ export default function FormEditorPage({ params }: FormEditorPageProps) {
                         <Label>Prompt Questions (one per line)</Label>
                         <Textarea
                           value={
-                            form.config.prePrompt?.questions?.join('\n') || ''
+                            config.prePrompt?.questions?.join('\n') || ''
                           }
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const currentPrompt = config.prePrompt || {
+                              enabled: true,
+                              title: 'Before you start...',
+                              questions: [],
+                            }
                             handleConfigUpdate({
                               prePrompt: {
-                                ...form.config.prePrompt,
+                                ...currentPrompt,
                                 questions: e.target.value
                                   .split('\n')
                                   .filter((q) => q.trim()),
                               },
                             })
-                          }
+                          }}
                           placeholder="What specific problem did our product solve?
 How did it improve your workflow?
 Would you recommend this to others?"
@@ -270,7 +337,7 @@ Would you recommend this to others?"
                 </CardHeader>
                 <CardContent>
                   <QuestionBuilder
-                    questions={form.config.questions}
+                    questions={config.questions}
                     onChange={(questions) => handleConfigUpdate({ questions })}
                   />
                 </CardContent>
@@ -284,7 +351,7 @@ Would you recommend this to others?"
               animate={{ opacity: 1, y: 0 }}
             >
               <FormStyleEditor
-                styling={form.config.styling}
+                styling={config.styling}
                 onChange={(styling) => handleConfigUpdate({ styling })}
               />
             </motion.div>
@@ -297,7 +364,7 @@ Would you recommend this to others?"
               className="space-y-6"
             >
               <FormSettingsEditor
-                settings={form.config.settings}
+                settings={config.settings}
                 onChange={(settings) => handleConfigUpdate({ settings })}
               />
 
@@ -338,7 +405,7 @@ Would you recommend this to others?"
 
         <div className="p-8">
           <div className={previewDevice === 'mobile' ? 'mx-auto max-w-sm' : ''}>
-            <FormPreview form={form} />
+            <FormPreview form={{ ...form, config: config as typeof form.config }} />
           </div>
         </div>
 

@@ -14,17 +14,19 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+type FormStyling = {
+  theme: 'minimal' | 'modern' | 'bold' | 'custom'
+  primaryColor: string
+  backgroundColor: string
+  fontFamily: string
+  borderRadius: 'none' | 'small' | 'medium' | 'large'
+  showLogo: boolean
+  logoUrl?: string
+}
+
 interface FormStyleEditorProps {
-  styling: {
-    theme: 'minimal' | 'modern' | 'bold' | 'custom'
-    primaryColor: string
-    backgroundColor: string
-    fontFamily: string
-    borderRadius: 'none' | 'small' | 'medium' | 'large'
-    showLogo: boolean
-    logoUrl?: string
-  }
-  onChange: (styling: Record<string, unknown>) => void
+  styling: FormStyling
+  onChange: (styling: FormStyling) => void
 }
 
 const themes = {
